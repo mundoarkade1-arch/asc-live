@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Paleta base (imagem de referência do dono) -->
+    <color name="asc_bg">#101010</color>
+    <color name="asc_white">#FFFFFF</color>
+    <color name="asc_lime">#C8FF00</color>
+    <!-- Cores derivadas (profundidade) -->
+    <color name="asc_surface">#1A1A1A</color>
+    <color name="asc_surface_focus">#222222</color>
+    <color name="asc_text2">#A8A8A8</color>
+    <color name="asc_text3">#6B6B6B</color>
+    <color name="asc_line">#2A2A2A</color>
+    <color name="asc_error">#FF5C5C</color>
+    <!-- Ícone do app -->
+    <color name="ic_launcher_background">#101010</color>
+</resources>
