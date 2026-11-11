@@ -1,0 +1,14 @@
+[
+  {"id": "bra.1", "nome": "Brasileirão Série A"},
+  {"id": "bra.2", "nome": "Brasileirão Série B"},
+  {"id": "bra.copa_do_brazil", "nome": "Copa do Brasil"},
+  {"id": "conmebol.libertadores", "nome": "Libertadores"},
+  {"id": "conmebol.sudamericana", "nome": "Sul-Americana"},
+  {"id": "uefa.champions", "nome": "Champions League"},
+  {"id": "eng.1", "nome": "Premier League"},
+  {"id": "esp.1", "nome": "La Liga"},
+  {"id": "ita.1", "nome": "Série A da Itália"},
+  {"id": "ger.1", "nome": "Bundesliga"},
+  {"id": "fra.1", "nome": "Ligue 1"},
+  {"id": "fifa.world", "nome": "Copa do Mundo"}
+]

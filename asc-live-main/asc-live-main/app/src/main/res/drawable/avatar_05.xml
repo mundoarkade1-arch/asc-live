@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Avatar 05: bonequinho em vetor (leve). Gerado com cores do app. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <path
+        android:fillColor="#E4FF80"
+        android:pathData="M0,48 a48,48 0 1,0 96,0 a48,48 0 1,0 -96,0 Z" />
+    <group>
+        <clip-path android:pathData="M0,48 a48,48 0 1,0 96,0 a48,48 0 1,0 -96,0 Z" />
+        <path
+            android:fillColor="#A8A8A8"
+            android:pathData="M12,96 C12,76 28,68 48,68 C68,68 84,76 84,96 Z" />
+        <path
+            android:fillColor="#C8FF00"
+            android:pathData="M28,70 L35,69 L33,96 L23,96 Z M68,70 L61,69 L63,96 L73,96 Z" />
+        <path
+            android:fillColor="#8E5630"
+            android:pathData="M41,52 L55,52 L55,71 L41,71 Z" />
+        <path
+            android:fillColor="#A86B3C"
+            android:pathData="M30,44 a3,4 0 1,0 6,0 a3,4 0 1,0 -6,0 Z" />
+        <path
+            android:fillColor="#A86B3C"
+            android:pathData="M60,44 a3,4 0 1,0 6,0 a3,4 0 1,0 -6,0 Z" />
+        <path
+            android:fillColor="#A86B3C"
+            android:pathData="M33,42 a15,17 0 1,0 30,0 a15,17 0 1,0 -30,0 Z" />
+        <path
+            android:fillColor="#1A1A1A"
+            android:pathData="M31,40 C26,31 30,21 38,23 C40,16 57,16 59,23 C67,21 70,31 65,40 C61,31 36,31 31,40 Z" />
+        <path
+            android:fillColor="#101010"
+            android:pathData="M40.1,43 a1.9,2.1 0 1,0 3.8,0 a1.9,2.1 0 1,0 -3.8,0 Z" />
+        <path
+            android:fillColor="#101010"
+            android:pathData="M52.1,43 a1.9,2.1 0 1,0 3.8,0 a1.9,2.1 0 1,0 -3.8,0 Z" />
+        <path
+            android:strokeColor="#101010"
+            android:strokeWidth="1.4"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M36.5,43 a5.5,5.5 0 1,0 11,0 a5.5,5.5 0 1,0 -11,0 Z M48.5,43 a5.5,5.5 0 1,0 11,0 a5.5,5.5 0 1,0 -11,0 Z" />
+        <path
+            android:strokeColor="#101010"
+            android:strokeWidth="1.4"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M47.5,43 L48.5,43" />
+        <path
+            android:strokeColor="#8E5630"
+            android:strokeWidth="1.2"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M47,46 Q48,48.5 49.5,47.5" />
+        <path
+            android:strokeColor="#2A1608"
+            android:strokeWidth="1.7"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M43,50 Q48,54.5 53,50" />
+    </group>
+</vector>
