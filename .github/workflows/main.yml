@@ -34,8 +34,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Preparar o Android SDK
-        uses: android-actions/setup-android@v3
+      # O Android SDK já vem instalado no ubuntu-latest. O passo "setup-android" quebrava
+      # (erro "Failed to find package 'tools'"), então foi removido. Aqui só aceitamos as licenças.
+      - name: Aceitar as licenças do Android SDK
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - name: Preparar o Gradle
         uses: gradle/actions/setup-gradle@v4
