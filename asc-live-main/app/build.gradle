@@ -1,0 +1,45 @@
+plugins {
+    id 'com.android.application'
+}
+
+// O GitHub Actions passa estas duas variáveis (número da execução).
+def vCode = System.getenv('VERSION_CODE') ?: '1'
+def vName = System.getenv('VERSION_NAME') ?: '1.0.0'
+
+android {
+    namespace 'com.asclive.tvbox'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.asclive.tvbox'
+        minSdk 21
+        targetSdk 34
+        versionCode = Integer.parseInt(vCode)
+        versionName = vName
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    // O media3 usa APIs marcadas como "instáveis". O app já avisa isso no código
+    // (@OptIn); aqui evitamos que a verificação do lint derrube a compilação.
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
+
+dependencies {
+    implementation 'androidx.media3:media3-exoplayer:1.4.1'
+    implementation 'androidx.media3:media3-exoplayer-hls:1.4.1'
+    implementation 'androidx.media3:media3-ui:1.4.1'
+    implementation 'androidx.core:core:1.13.1'
+}
