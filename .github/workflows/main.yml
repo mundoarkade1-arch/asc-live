@@ -13,6 +13,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     # O projeto está dentro da pasta "asc-live-main/asc-live-main" do repositório.
     defaults:
       run:
@@ -45,8 +46,10 @@ jobs:
           gradle-version: '8.7'
           build-root-directory: asc-live-main/asc-live-main
 
+      # Guarda tudo o que o Gradle escreve em build-log.txt, para podermos ler o erro.
       - name: Compilar o APK
-        run: gradle assembleRelease --no-daemon --stacktrace
+        shell: bash
+        run: gradle assembleRelease --no-daemon --stacktrace 2>&1 | tee build-log.txt
 
       - name: Alinhar e assinar o APK
         run: |
@@ -69,6 +72,25 @@ jobs:
               --ks-key-alias test --out ASC-Live.apk aligned.apk
           fi
           "$BT/apksigner" verify ASC-Live.apk
+
+      # Roda mesmo se a compilação falhar: separa só as linhas de erro num arquivo curto.
+      - name: Separar os erros
+        if: always()
+        run: |
+          if [ -f build-log.txt ]; then
+            grep -n -i -B2 -A8 "error:\|FAILED\|What went wrong\|Exception" build-log.txt | head -300 > erros.txt || true
+            tail -80 build-log.txt > fim-do-log.txt
+          fi
+
+      - name: Guardar o registro do erro
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: registro-do-erro
+          path: |
+            asc-live-main/asc-live-main/erros.txt
+            asc-live-main/asc-live-main/fim-do-log.txt
+          if-no-files-found: ignore
 
       - name: Guardar o APK (arquivo de teste)
         uses: actions/upload-artifact@v4
