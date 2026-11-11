@@ -13,10 +13,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # O projeto está dentro da pasta "asc-live-main" do repositório.
+    # O projeto está dentro da pasta "asc-live-main/asc-live-main" do repositório.
     defaults:
       run:
-        working-directory: asc-live-main
+        working-directory: asc-live-main/asc-live-main
     env:
       VERSION_CODE: ${{ github.run_number }}
       VERSION_NAME: 1.0.${{ github.run_number }}
@@ -43,7 +43,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
-          build-root-directory: asc-live-main
+          build-root-directory: asc-live-main/asc-live-main
 
       - name: Compilar o APK
         run: gradle assembleRelease --no-daemon --stacktrace
@@ -74,7 +74,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ASC-Live-apk
-          path: asc-live-main/ASC-Live.apk
+          path: asc-live-main/asc-live-main/ASC-Live.apk
 
       - name: Publicar a Release
         if: env.SIGNED == '1'
