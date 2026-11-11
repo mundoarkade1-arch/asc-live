@@ -139,7 +139,7 @@ public final class XtreamApi {
     private static final int MAX_EPG_SLOTS = 8;
     private static final int MAX_SCHEDULE_READ = 12;
     private static final int SCHEDULE_SHOWN = 6;
-    private static final String USER_AGENT = "ASC-Live/1.0 (Android)";
+    private static final String USER_AGENT = "ASC-Cine/1.0 (Android)";
 
     private static final Pattern MARKS = Pattern.compile("\\p{M}+");
 

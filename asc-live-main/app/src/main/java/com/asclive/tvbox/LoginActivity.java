@@ -20,7 +20,7 @@ import android.widget.TextView;
  */
 public class LoginActivity extends Activity {
 
-    private static final long POLL_MS = 30000L;
+    private static final long POLL_MS = 5000L;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean switching;
@@ -328,22 +328,34 @@ public class LoginActivity extends Activity {
             }
             Bg.run(LoginActivity.this, () -> {
                 DeviceLink.Reply r = DeviceLink.poll(LoginActivity.this);
-                if (DeviceLink.isNewer(LoginActivity.this, r)
-                        && DeviceLink.verify(r) == LoginChecker.Result.OK) {
-                    DeviceLink.apply(LoginActivity.this, r);
-                    return true;
+                if (r.state == DeviceLink.State.OFFLINE) {
+                    return "offline";
                 }
-                return false;
-            }, new Bg.Done<Boolean>() {
+                if (DeviceLink.isNewer(LoginActivity.this, r)) {
+                    LoginChecker.Result v = DeviceLink.verify(r);
+                    if (v == LoginChecker.Result.OK) {
+                        DeviceLink.apply(LoginActivity.this, r);
+                        return "ok";
+                    }
+                    return "falhou:" + message(v);
+                }
+                return r.state == DeviceLink.State.WAITING ? "waiting" : "";
+            }, new Bg.Done<String>() {
                 @Override
-                public void ok(Boolean applied) {
-                    if (applied) {
+                public void ok(String res) {
+                    if ("ok".equals(res)) {
                         enter();
+                    } else if ("offline".equals(res)) {
+                        setStatus("Sem conexão com o painel. Confira a internet.", true);
+                    } else if (res.startsWith("falhou:")) {
+                        setStatus("Chegou uma lista do painel, mas o teste falhou. "
+                                + res.substring(7), true);
                     }
                 }
 
                 @Override
                 public void fail(Exception e) {
+                    setStatus("Erro ao falar com o painel.", true);
                 }
             });
             handler.postDelayed(this, POLL_MS);

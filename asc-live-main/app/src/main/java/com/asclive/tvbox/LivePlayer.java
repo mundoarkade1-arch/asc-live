@@ -53,7 +53,7 @@ final class LivePlayer {
     static final long STALL_MS = 8000L;
     private static final int MAX_RECONNECTS = 3;
     private static final String PREFS_LAST = "asc_live_last";
-    private static final String USER_AGENT = "ASC-Live/1.0 (Android)";
+    private static final String USER_AGENT = "ASC-Cine/1.0 (Android)";
 
     private static LivePlayer instance;
     private static final ExecutorService WARM = Executors.newSingleThreadExecutor();

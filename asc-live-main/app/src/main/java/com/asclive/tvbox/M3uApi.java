@@ -42,7 +42,7 @@ public final class M3uApi {
     private static final long MAX_SECONDS = 60L;
     private static final int MAX_LINE = 4096;
     private static final int MAX_NAME = 200;
-    private static final String USER_AGENT = "ASC-Live/1.0 (Android)";
+    private static final String USER_AGENT = "ASC-Cine/1.0 (Android)";
 
     private static final Pattern ATTR = Pattern.compile("([\\w-]+)=\"([^\"]*)\"");
     private static final Pattern EP = Pattern.compile(
