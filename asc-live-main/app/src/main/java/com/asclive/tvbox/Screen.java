@@ -71,6 +71,10 @@ abstract class Screen {
 
     /** Mensagem de erro em português simples. */
     static String errorText(Exception e) {
+        String msg = e == null ? null : e.getMessage();
+        if (msg != null && msg.startsWith("lista:")) {
+            return "Não carregou a lista. " + msg.substring(6).trim();
+        }
         return "Não foi possível carregar agora. Confira a internet e tente de novo.";
     }
 }

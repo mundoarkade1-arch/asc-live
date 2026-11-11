@@ -58,7 +58,19 @@ public final class M3uApi {
     private static final Pattern G_MOVIE = Pattern.compile(
             "filmes?|movies?|\\bvod\\b|cine|lan[c\u00e7]amentos?");
 
+    /** Resumo da última leitura (sem endereços nem senhas), para mostrar na tela se falhar. */
+    private static volatile int dLines;
+    private static volatile int dExtinf;
+    private static volatile int dUrls;
+    private static volatile int dLive;
+    private static volatile String dFirst = "";
+
     private M3uApi() {
+    }
+
+    private static String diag() {
+        return "lista: foram lidas " + dLines + " linhas, " + dExtinf + " canais (EXTINF), "
+                + dUrls + " links, " + dLive + " ao vivo. Começo do arquivo: \"" + dFirst + "\".";
     }
 
     // ---------- Chamada pública ----------
@@ -73,6 +85,11 @@ public final class M3uApi {
     public static void streamLive(String m3uUrl, boolean hideAdult,
                                   XtreamApi.ResultListener listener) throws IOException {
         final int[] found = {0};
+        dLines = 0;
+        dExtinf = 0;
+        dUrls = 0;
+        dLive = 0;
+        dFirst = "";
         try {
             readList(m3uUrl, reader -> walk(reader, (url, grp, name, icon, tvgId, counter) -> {
                 if (!isLive(url, grp, name)) {
@@ -83,13 +100,22 @@ public final class M3uApi {
                     return true;
                 }
                 found[0]++;
+                dLive = found[0];
                 return listener.onItem(new XtreamApi.Item(XtreamApi.Kind.LIVE,
                         String.valueOf(counter), cut(name), icon, grp, tvgId, "", url));
             }));
         } catch (IOException e) {
             if (found[0] == 0) {
-                throw e;
+                String msg = e.getMessage();
+                if (msg != null && msg.startsWith("lista:")) {
+                    throw e;
+                }
+                throw new IOException("lista: falha ao ler (" + e.getClass().getSimpleName()
+                        + "). " + diag());
             }
+        }
+        if (found[0] == 0) {
+            throw new IOException(diag());
         }
     }
 
@@ -98,13 +124,13 @@ public final class M3uApi {
     /** Abre a lista, entrega a leitura à tarefa e fecha tudo no fim. */
     private static void readList(String m3uUrl, Job job) throws IOException {
         if (m3uUrl == null || !isHttp(m3uUrl.trim())) {
-            throw new IOException("endereco");
+            throw new IOException("lista: o endereço da lista não parece certo.");
         }
         HttpURLConnection conn = open(m3uUrl.trim());
         try {
             int code = conn.getResponseCode();
             if (code != 200) {
-                throw new IOException("resposta " + code);
+                throw new IOException("lista: o servidor respondeu código " + code + ".");
             }
             Reader reader = new InputStreamReader(
                     new LimitedStream(conn.getInputStream(), MAX_BYTES), StandardCharsets.UTF_8);
@@ -147,7 +173,14 @@ public final class M3uApi {
             if (line.isEmpty()) {
                 continue;
             }
+            dLines++;
+            if (dFirst.isEmpty()) {
+                dFirst = line.length() > 0 && line.charAt(0) == '#'
+                        ? line.substring(0, Math.min(line.length(), 12))
+                        : "(não começa com #EXTM3U)";
+            }
             if (line.startsWith("#EXTINF")) {
+                dExtinf++;
                 int comma = line.lastIndexOf(',');
                 String head = comma > 0 ? line.substring(0, comma) : line;
                 String title = comma >= 0 ? line.substring(comma + 1).trim() : "";
@@ -184,6 +217,7 @@ public final class M3uApi {
                 continue;
             }
             counter++;
+            dUrls++;
 
             String icon = isHttp(logo) ? logo : "";
             if (!visitor.entry(line, group, name, icon, tvgId, counter)) {
@@ -299,10 +333,10 @@ public final class M3uApi {
                 while (pos < len) {
                     char c = buf[pos++];
                     any = true;
-                    if (c == '\n') {
+                    if (c == '\n' || c == '\r') {
                         return true;
                     }
-                    if (c != '\r' && sb.length() < MAX_LINE) {
+                    if (sb.length() < MAX_LINE) {
                         sb.append(c);
                     }
                 }
