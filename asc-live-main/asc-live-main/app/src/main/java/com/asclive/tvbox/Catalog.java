@@ -1,6 +1,7 @@
 package com.asclive.tvbox;
 
 import android.content.Context;
+import android.net.Uri;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,6 +19,11 @@ import java.util.Set;
  * se estiver velho, é mostrado na hora e atualizado por trás); 3) a lista do servidor.
  * O controle parental é aplicado na hora de devolver (o que fica
  * guardado é a lista completa).
+ *
+ * Lista M3U rápida: se o link M3U for do tipo servidor Xtream (termina em get.php e tem
+ * username e password), o app pede ao servidor SÓ os canais ao vivo (como no login por
+ * servidor) em vez de baixar a lista inteira com filmes e séries. Se o servidor não
+ * responder desse jeito, o app volta para o jeito antigo (ler a lista M3U).
  */
 final class Catalog {
 
@@ -161,7 +167,51 @@ final class Catalog {
         if (c == null) {
             return null;
         }
+        if (isM3u(c)) {
+            if (!channel.url.isEmpty()) {
+                return channel.url;
+            }
+            String[] x = xtreamFromM3u(c.m3uUrl);
+            if (x == null) {
+                return null;
+            }
+            return XtreamApi.streamUrl(x[0], x[1], x[2], channel);
+        }
         return XtreamApi.streamUrl(c.server, c.user, c.pass, channel);
+    }
+
+    /**
+     * Se o link M3U for do tipo servidor Xtream (.../get.php?username=...&password=...),
+     * devolve {servidor, usuário, senha}. Senão devolve null.
+     * Os valores têm login: nunca mostrar nem registrar em log.
+     */
+    static String[] xtreamFromM3u(String m3u) {
+        if (m3u == null) {
+            return null;
+        }
+        try {
+            Uri u = Uri.parse(m3u.trim());
+            String scheme = u.getScheme();
+            String host = u.getHost();
+            String path = u.getPath();
+            if (scheme == null || host == null || path == null) {
+                return null;
+            }
+            if (!path.endsWith("/get.php")) {
+                return null;
+            }
+            String user = u.getQueryParameter("username");
+            String pass = u.getQueryParameter("password");
+            if (user == null || user.isEmpty() || pass == null || pass.isEmpty()) {
+                return null;
+            }
+            int port = u.getPort();
+            String base = path.substring(0, path.length() - "/get.php".length());
+            String server = scheme + "://" + host + (port > 0 ? ":" + port : "") + base;
+            return new String[]{server, user, pass};
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // ---------- Leitura da lista (memória, arquivo, servidor) ----------
@@ -206,31 +256,35 @@ final class Catalog {
         final List<XtreamApi.Item> items = new ArrayList<>();
         final Map<String, Cat> known = new LinkedHashMap<>();
         if (isM3u(c)) {
-            M3uApi.streamLive(c.m3uUrl, false, item -> {
-                if (items.size() >= MAX_LIVE) {
-                    return false;
+            boolean done = false;
+            String[] x = xtreamFromM3u(c.m3uUrl);
+            if (x != null) {
+                // Jeito rápido: só os canais ao vivo, direto do servidor.
+                try {
+                    readXtream(x[0], x[1], x[2], items, known);
+                    done = !items.isEmpty();
+                } catch (IOException ignored) {
+                    // o servidor não aceitou: usamos o jeito antigo, abaixo
                 }
-                items.add(item);
-                if (!known.containsKey(item.categoryId)) {
-                    known.put(item.categoryId, new Cat(item.categoryId, item.categoryId));
+                if (!done) {
+                    items.clear();
+                    known.clear();
                 }
-                return true;
-            });
-        } else {
-            try {
-                for (XtreamApi.Category g : XtreamApi.liveCategories(c.server, c.user, c.pass)) {
-                    known.put(g.id, new Cat(g.id, g.name));
-                }
-            } catch (IOException ignored) {
-                // sem categorias: montamos pelos canais, abaixo
             }
-            XtreamApi.streamLive(c.server, c.user, c.pass, item -> {
-                if (items.size() >= MAX_LIVE) {
-                    return false;
-                }
-                items.add(item);
-                return true;
-            });
+            if (!done) {
+                M3uApi.streamLive(c.m3uUrl, false, item -> {
+                    if (items.size() >= MAX_LIVE) {
+                        return false;
+                    }
+                    items.add(item);
+                    if (!known.containsKey(item.categoryId)) {
+                        known.put(item.categoryId, new Cat(item.categoryId, item.categoryId));
+                    }
+                    return true;
+                });
+            }
+        } else {
+            readXtream(c.server, c.user, c.pass, items, known);
         }
         if (items.isEmpty()) {
             throw new IOException("sem canais");
@@ -250,6 +304,26 @@ final class Catalog {
             cats.add(new Cat(id, "Outros"));
         }
         return LiveCache.save(ctx, owner, cats, items);
+    }
+
+    /** Lê do servidor Xtream as categorias e só os canais ao vivo. */
+    private static void readXtream(String server, String user, String pass,
+                                   final List<XtreamApi.Item> items,
+                                   Map<String, Cat> known) throws IOException {
+        try {
+            for (XtreamApi.Category g : XtreamApi.liveCategories(server, user, pass)) {
+                known.put(g.id, new Cat(g.id, g.name));
+            }
+        } catch (IOException ignored) {
+            // sem categorias: montamos pelos canais, depois
+        }
+        XtreamApi.streamLive(server, user, pass, item -> {
+            if (items.size() >= MAX_LIVE) {
+                return false;
+            }
+            items.add(item);
+            return true;
+        });
     }
 
     /** Atualiza o arquivo guardado sem atrapalhar a tela (vale na próxima vez que abrir). */
