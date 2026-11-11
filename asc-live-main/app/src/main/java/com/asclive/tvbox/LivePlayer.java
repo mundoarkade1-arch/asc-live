@@ -17,7 +17,7 @@ import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.extractor.DefaultExtractorsFactory;
-import androidx.media3.extractor.ts.DefaultTsPayloadReader;
+import androidx.media3.extractor.ts.DefaultTsPayloadReaderFactory;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -109,7 +109,7 @@ final class LivePlayer {
                 .setAllowCrossProtocolRedirects(true)
                 .setKeepPostFor302Redirects(true);
         DefaultExtractorsFactory extractors = new DefaultExtractorsFactory()
-                .setTsExtractorFlags(DefaultTsPayloadReader.FLAG_ALLOW_NON_IDR_KEYFRAMES);
+                .setTsExtractorFlags(DefaultTsPayloadReaderFactory.FLAG_ALLOW_NON_IDR_KEYFRAMES);
         // Buffer de ao vivo: abre rápido (0,5 s) e guarda pouco (1,5 s a 8 s).
         DefaultLoadControl load = new DefaultLoadControl.Builder()
                 .setBufferDurationsMs(1500, 8000, 500, 1000)
