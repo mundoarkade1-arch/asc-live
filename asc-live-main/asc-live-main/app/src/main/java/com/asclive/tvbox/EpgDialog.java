@@ -156,7 +156,7 @@ final class EpgDialog {
             if (p == current || p.end <= now) {
                 continue;
             }
-            if (added++ >= 6) {
+            if (added++ >= 5) {
                 break;
             }
             addRow(act, rows, fmt.format(new Date(p.start)) + " - " + fmt.format(new Date(p.end)),

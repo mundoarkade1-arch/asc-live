@@ -48,6 +48,16 @@ final class FootballApi {
     private FootballApi() {
     }
 
+    static final class Result {
+        final List<Match> matches;
+        final boolean error;
+
+        Result(List<Match> matches, boolean error) {
+            this.matches = matches;
+            this.error = error;
+        }
+    }
+
     private static final class League {
         final String id;
         final String nome;
@@ -60,25 +70,37 @@ final class FootballApi {
 
     /** Jogos de hoje (no fuso do aparelho) e jogos que estão rolando agora. */
     static List<Match> today(Context ctx) {
+        return todayResult(ctx).matches;
+    }
+
+    static Result todayResult(Context ctx) {
         Context app = ctx.getApplicationContext();
         String day = dayKey(System.currentTimeMillis());
         Cached cached = readCache(app, day);
         if (cached != null && System.currentTimeMillis() - cached.time < TTL_MS) {
-            return cached.matches;
+            return new Result(cached.matches, false);
         }
         List<League> leagues = readLeagues(app);
         List<Match> out = new ArrayList<>();
         int[] okCount = {0};
+        int[] failCount = {0};
         if (!leagues.isEmpty()) {
-            fetchAll(leagues, day, out, okCount);
+            fetchAll(leagues, day, out, okCount, failCount);
+        }
+        if (out.isEmpty()) {
+            out.addAll(fetchTheSportsDb(day));
         }
         sort(out);
         if (okCount[0] > 0) {
             writeCache(app, day, out);
-            return out;
+            return new Result(out, false);
+        }
+        if (!out.isEmpty()) {
+            writeCache(app, day, out);
+            return new Result(out, false);
         }
         // Nenhuma liga respondeu: usa o último cache do dia, se houver.
-        return cached != null ? cached.matches : out;
+        return cached != null ? new Result(cached.matches, false) : new Result(out, true);
     }
 
     /** Apaga o cache de jogos (Ajustes > limpar cache). */
@@ -90,7 +112,7 @@ final class FootballApi {
     // ---------- Busca ----------
 
     private static void fetchAll(List<League> leagues, final String day, List<Match> out,
-                                 int[] okCount) {
+                                 int[] okCount, int[] failCount) {
         // Pede de ontem a amanhã e filtra pelo dia local: o fuso da ESPN pode ser outro.
         final String range = shiftDay(-1) + "-" + shiftDay(1);
         ExecutorService pool = Executors.newFixedThreadPool(4);
@@ -117,6 +139,7 @@ final class FootballApi {
                     }
                 } catch (Exception ignored) {
                     // essa liga falhou: as outras continuam
+                    failCount[0]++;
                 }
             }
         } catch (InterruptedException e) {
@@ -152,13 +175,64 @@ final class FootballApi {
             }
             for (int i = 0; i < events.length(); i++) {
                 Match m = parseEvent(l, events.optJSONObject(i));
-                if (m != null && (m.isLive() || day.equals(dayKey(m.horario)))) {
+                if (m != null && (m.isLive() || isWithinLocalDay(m.horario))) {
                     out.add(m);
                 }
             }
             return out;
         } finally {
             conn.disconnect();
+        }
+    }
+
+    /** Fonte reserva pública e gratuita. A chave 3 é a chave demo documentada pelo serviço. */
+    private static List<Match> fetchTheSportsDb(String day) {
+        List<Match> out = new ArrayList<>();
+        HttpURLConnection conn = null;
+        try {
+            String iso = day.substring(0, 4) + "-" + day.substring(4, 6) + "-" + day.substring(6);
+            URL url = new URL("https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d="
+                    + iso + "&s=Soccer");
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(TIMEOUT_MS);
+            conn.setReadTimeout(TIMEOUT_MS);
+            conn.setRequestProperty("User-Agent", USER_AGENT);
+            if (conn.getResponseCode() != 200) return out;
+            JSONArray events = new JSONObject(readBody(conn.getInputStream())).optJSONArray("events");
+            if (events == null) return out;
+            for (int i = 0; i < events.length(); i++) {
+                JSONObject e = events.optJSONObject(i);
+                if (e == null) continue;
+                long time = parseDate(e.optString("strTimestamp", ""));
+                if (time <= 0) time = parseLocalDateTime(e.optString("dateEvent", ""), e.optString("strTime", ""));
+                String home = e.optString("strHomeTeam", "");
+                String away = e.optString("strAwayTeam", "");
+                String id = e.optString("idEvent", "");
+                if (time <= 0 || !isWithinLocalDay(time) || home.isEmpty() || away.isEmpty() || id.isEmpty()) continue;
+                String state = e.optString("strStatus", "");
+                int status = state.toLowerCase(Locale.ROOT).contains("finished") ? Match.FINISHED
+                        : (time <= System.currentTimeMillis() ? Match.LIVE : Match.SCHEDULED);
+                String hs = e.optString("intHomeScore", "");
+                String as = e.optString("intAwayScore", "");
+                String score = hs.isEmpty() || as.isEmpty() ? "" : hs + " x " + as;
+                out.add(new Match("tsdb-" + id, "thesportsdb", e.optString("strLeague", "Futebol"),
+                        home, away, https(e.optString("strHomeTeamBadge", "")),
+                        https(e.optString("strAwayTeamBadge", "")), time, status, state, score));
+            }
+        } catch (Exception ignored) {
+            // fonte reserva indisponível
+        } finally {
+            if (conn != null) conn.disconnect();
+        }
+        return out;
+    }
+
+    private static long parseLocalDateTime(String date, String time) {
+        try {
+            String value = date + "T" + (time.length() >= 5 ? time.substring(0, 5) : time);
+            return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.US).parse(value).getTime();
+        } catch (Exception ignored) {
+            return 0L;
         }
     }
 
@@ -296,6 +370,19 @@ final class FootballApi {
         c.setTimeInMillis(millis);
         return String.format(Locale.US, "%04d%02d%02d", c.get(Calendar.YEAR),
                 c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH));
+    }
+
+    private static boolean isWithinLocalDay(long millis) {
+        Calendar start = Calendar.getInstance();
+        start.set(Calendar.HOUR_OF_DAY, 0);
+        start.set(Calendar.MINUTE, 0);
+        start.set(Calendar.SECOND, 0);
+        start.set(Calendar.MILLISECOND, 0);
+        Calendar end = (Calendar) start.clone();
+        end.add(Calendar.DAY_OF_MONTH, 1);
+        start.add(Calendar.HOUR_OF_DAY, -8);
+        end.add(Calendar.HOUR_OF_DAY, 8);
+        return millis >= start.getTimeInMillis() && millis < end.getTimeInMillis();
     }
 
     private static String shiftDay(int days) {

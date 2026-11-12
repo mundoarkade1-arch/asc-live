@@ -249,7 +249,7 @@ final class LiveScreen extends Screen {
 
     @Override
     String hints() {
-        return "OK:Assistir|OK segurado:Favoritar|Menu:Programação";
+        return "";
     }
 
     @Override
@@ -482,27 +482,35 @@ final class LiveScreen extends Screen {
         if (c == null) {
             return;
         }
-        EpgCache.get(c.server, c.user, c.pass, id, epg -> {
+        EpgCache.getSchedule(c.server, c.user, c.pass, id, programs -> {
             if (!id.equals(detailId)) {
                 return;
             }
-            if (epg == null) {
+            if (programs == null || programs.isEmpty()) {
                 dProg.setText("Programação indisponível.");
                 return;
             }
-            dProg.setText(epg.title);
-            dTime.setText(clock.format(new Date(epg.start)) + " - "
-                    + clock.format(new Date(epg.end)));
-            long span = epg.end - epg.start;
             long now = System.currentTimeMillis();
-            setProgress(span > 0 ? (int) Math.max(0, Math.min(100, (now - epg.start) * 100 / span))
-                    : -1);
-            if (epg.nextTitle == null || epg.nextTitle.isEmpty()) {
-                dNext.setText("");
-            } else {
-                dNext.setText((epg.nextStart > 0 ? clock.format(new Date(epg.nextStart)) + "   "
-                        : "") + epg.nextTitle);
+            XtreamApi.Program current = null;
+            for (XtreamApi.Program p : programs) {
+                if (p.start <= now && now < p.end) { current = p; break; }
             }
+            XtreamApi.Program shown = current != null ? current : programs.get(0);
+            dProg.setText(shown.title);
+            dTime.setText(clock.format(new Date(shown.start)) + " - "
+                    + clock.format(new Date(shown.end)));
+            long span = shown.end - shown.start;
+            setProgress(current != null && span > 0
+                    ? (int) Math.max(0, Math.min(100, (now - shown.start) * 100 / span)) : -1);
+            StringBuilder next = new StringBuilder();
+            int added = 0;
+            for (XtreamApi.Program p : programs) {
+                if (p == current || p.end <= now || added >= 5) continue;
+                if (next.length() > 0) next.append("\n");
+                next.append(clock.format(new Date(p.start))).append("   ").append(p.title);
+                added++;
+            }
+            dNext.setText(next.toString());
         });
     }
 

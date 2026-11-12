@@ -161,6 +161,17 @@ final class Ui {
         return s;
     }
 
+    /** Foco limpo para a navegacao: preenchimento suave, sem contorno. */
+    static StateListDrawable softFocusBg(Context c, int fillFocus, float radiusDp) {
+        float r = dp(c, radiusDp);
+        StateListDrawable s = new StateListDrawable();
+        GradientDrawable on = shape(fillFocus, r, 0, 0);
+        s.addState(new int[]{android.R.attr.state_focused}, on);
+        s.addState(new int[]{android.R.attr.state_pressed}, on);
+        s.addState(new int[]{}, shape(0x00000000, r, 0, 0));
+        return s;
+    }
+
     /** Retângulo limão com texto preto (como "3D" na página de referência). */
     static TextView limeTag(Context c, CharSequence t) {
         TextView v = title(c, t, 13, C.BG);

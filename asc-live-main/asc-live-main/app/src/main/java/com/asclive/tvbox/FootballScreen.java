@@ -27,6 +27,7 @@ final class FootballScreen extends Screen {
     private final FrameLayout root;
     private final LinearLayout cardsBox;
     private final TextView notice;
+    private final TextView retry;
     private final TextView subtitle;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final List<Match> matches = new ArrayList<>();
@@ -66,6 +67,13 @@ final class FootballScreen extends Screen {
         notice.setGravity(Gravity.CENTER);
         notice.setPadding(Ui.dp(act, 48), 0, Ui.dp(act, 48), 0);
         root.addView(notice, new FrameLayout.LayoutParams(-1, -1));
+        retry = Ui.button(act, "Tentar de novo", Ui.DARK);
+        retry.setVisibility(View.GONE);
+        FrameLayout.LayoutParams retryLp = new FrameLayout.LayoutParams(-2, Ui.dp(act, 52));
+        retryLp.gravity = Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL;
+        retryLp.topMargin = Ui.dp(act, 110);
+        root.addView(retry, retryLp);
+        retry.setOnClickListener(v -> load());
     }
 
     @Override
@@ -109,16 +117,21 @@ final class FootballScreen extends Screen {
         if (matches.isEmpty()) {
             showNotice("Buscando os jogos de hoje...");
         }
-        bg(() -> ListGames.merge(act, FootballApi.today(act)), new Bg.Done<List<Match>>() {
+        bg(() -> FootballApi.todayResult(act), new Bg.Done<FootballApi.Result>() {
             @Override
-            public void ok(List<Match> value) {
+            public void ok(FootballApi.Result result) {
                 loading = false;
-                render(value);
+                if (result.error) {
+                    showError();
+                } else {
+                    render(ListGames.merge(act, result.matches));
+                }
             }
 
             @Override
             public void fail(Exception e) {
                 loading = false;
+                showError();
                 if (matches.isEmpty()) {
                     showNotice("NÃ£o foi possÃ­vel carregar os jogos.\nTente Atualizar.");
                 }
@@ -138,6 +151,7 @@ final class FootballScreen extends Screen {
             return;
         }
         notice.setVisibility(View.GONE);
+        retry.setVisibility(View.GONE);
 
         Map<String, List<Match>> byLeague = new LinkedHashMap<>();
         for (Match match : matches) {
@@ -279,5 +293,13 @@ final class FootballScreen extends Screen {
     private void showNotice(String text) {
         notice.setText(text);
         notice.setVisibility(View.VISIBLE);
+        retry.setVisibility(View.GONE);
+    }
+
+    private void showError() {
+        if (!matches.isEmpty()) return;
+        notice.setText("Sem conexão para buscar os jogos.");
+        notice.setVisibility(View.VISIBLE);
+        retry.setVisibility(View.VISIBLE);
     }
 }

@@ -55,6 +55,15 @@ Feito (compilado só por sintaxe; o build do Actions e o teste no TX9 são a pro
 - Baixo = próximo canal, Cima = canal anterior (como no ASC TV Box). OK = lista rápida. Números = digita o canal.
 - Menu (três listras) = programação do canal. Voltar = sai do player (ou fecha a lista).
 
+## Rodada 14 (correções finais antes do teste no aparelho)
+- [x] Player protegido contra grupos/variantes inválidos e falhas de inicialização; erro não encerra o app.
+- [x] ESPN validada com HTTP 200 para `bra.1` e `bra.copa_do_brazil`; filtro local usa margem de 8 horas.
+- [x] Jogos agora distinguem erro de rede de nenhum jogo e têm botão Tentar de novo.
+- [x] TheSportsDB v1 (chave pública demo 3, sem chave do usuário) adicionada como fonte reserva.
+- [x] Barra superior corrigida para acentos nítidos e foco preenchido sem borda vermelha.
+- [x] Canais e EpgDialog mostram o programa atual e até cinco próximos; Xtream solicita 10 itens.
+- [ ] Compilar no GitHub Actions e validar no TV Box.
+
 ## Para testar (o que ninguém viu rodando)
 1. Build do GitHub passa? (a API do `androidx.media3` 1.4.1 foi escrita de memória; se o build reclamar
    de algum método do `LivePlayer`, é lá.)

@@ -10,6 +10,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.util.Log;
 import android.widget.BaseAdapter;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -69,9 +70,17 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
             finish();
             return;
         }
-        buildUi();
-        setContentView(root);
-        lp = LivePlayer.get(this);
+        try {
+            buildUi();
+            setContentView(root);
+            lp = LivePlayer.get(this);
+        } catch (Exception e) {
+            Log.e("ASC.LivePlayer", "activity init failed: " + e.getClass().getSimpleName());
+            TextView error = Ui.text(this, "N\u00e3o foi poss\u00edvel abrir o canal.", 22, C.TEXT);
+            error.setGravity(Gravity.CENTER);
+            setContentView(error);
+            lp = null;
+        }
     }
 
     @Override
@@ -96,6 +105,7 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
         if (lp == null) {
             return;
         }
+        if (pv == null) return;
         pv.setPlayer(lp.player());
         lp.setListener(this);
         playCurrent();
@@ -107,7 +117,7 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
         if (lp != null) {
             lp.setListener(null);
             lp.stop();
-            pv.setPlayer(null);
+            if (pv != null) pv.setPlayer(null);
         }
         super.onStop();
     }
@@ -230,7 +240,12 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
                 : LivePlayer.autoVariant(this, g));
         int want = LiveSession.variant;
         LiveSession.variant = -1;
-        lp.play(g, want);
+        try {
+            lp.play(g, want);
+        } catch (Exception e) {
+            Log.e("ASC.LivePlayer", "channel start failed: " + e.getClass().getSimpleName());
+            onFailed(g);
+        }
     }
 
     /** Troca de canal na tela já, e só abre o vídeo depois de um instante (zapear rápido). */

@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.MediaItem;
@@ -164,6 +165,11 @@ final class LivePlayer {
      * senão a preferida nos Ajustes).
      */
     void play(ChannelGroup g, int versao) {
+        if (g == null || g.variants == null || g.variants.isEmpty()) {
+            if (listener != null && g != null) listener.onFailed(g);
+            return;
+        }
+        try {
         token++;
         main.removeCallbacks(stall);
         stallArmed = false;
@@ -174,6 +180,11 @@ final class LivePlayer {
         round = 0;
         active = true;
         startAttempt();
+        } catch (Exception e) {
+            active = false;
+            Log.e("ASC.LivePlayer", "play failed: " + e.getClass().getSimpleName());
+            if (listener != null) listener.onFailed(g);
+        }
     }
 
     /** Para de tocar e solta a conexão (servidores IPTV limitam telas ao mesmo tempo). */
@@ -188,6 +199,7 @@ final class LivePlayer {
 
     private static int[] buildOrder(ChannelGroup g, int start) {
         int n = g.variants.size();
+        if (n == 0) return new int[0];
         int[] o = new int[n];
         o[0] = start;
         int k = 1;
@@ -204,6 +216,11 @@ final class LivePlayer {
             return;
         }
         final ChannelGroup g = group;
+        if (g.variants == null || g.variants.isEmpty() || order.length == 0
+                || pos < 0 || pos >= order.length) {
+            onFail();
+            return;
+        }
         final int vi = order[pos];
         String url = Catalog.urlOf(app, g.variants.get(vi).item);
         attemptOk = false;
@@ -218,9 +235,15 @@ final class LivePlayer {
         if (pathOf(url).endsWith(".m3u8")) {
             b.setMimeType(MimeTypes.APPLICATION_M3U8); // não precisa adivinhar o formato
         }
-        player.setMediaItem(b.build());
-        player.prepare();
-        player.setPlayWhenReady(true);
+        try {
+            player.setMediaItem(b.build());
+            player.prepare();
+            player.setPlayWhenReady(true);
+        } catch (Exception e) {
+            Log.e("ASC.LivePlayer", "prepare failed: " + e.getClass().getSimpleName());
+            onFail();
+            return;
+        }
         main.removeCallbacks(stall);
         stallArmed = true;
         main.postDelayed(stall, STALL_MS);
@@ -257,6 +280,11 @@ final class LivePlayer {
     private void onFail() {
         main.removeCallbacks(stall);
         stallArmed = false;
+        if (order.length == 0) {
+            active = false;
+            if (listener != null && group != null) listener.onFailed(group);
+            return;
+        }
         if (pos + 1 < order.length) {
             pos++;
             startAttempt();
