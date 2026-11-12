@@ -140,10 +140,20 @@ final class LivePlayer {
                 .setKeepPostFor302Redirects(true);
         extractors = new DefaultExtractorsFactory()
                 .setTsExtractorFlags(DefaultTsPayloadReaderFactory.FLAG_ALLOW_NON_IDR_KEYFRAMES);
-        // Buffer de ao vivo: abre rápido (0,5 s) e guarda pouco (1,5 s a 8 s).
-        DefaultLoadControl load = new DefaultLoadControl.Builder()
-                .setBufferDurationsMs(2500, 15000, 1200, 3000)
-                .build();
+        // Buffer de ao vivo: abre rápido (1,5 s) e guarda pouco (3 s a 15 s).
+        // ATENÇÃO: o ExoPlayer exige minBuffer >= bufferForPlayback E minBuffer >= rebuffer.
+        // Com 2500 / 3000 isso lançava IllegalArgumentException ao criar o player, e nenhum
+        // canal abria ("Não foi possível reproduzir este canal").
+        DefaultLoadControl load;
+        try {
+            load = new DefaultLoadControl.Builder()
+                    .setBufferDurationsMs(3000, 15000, 1500, 3000)
+                    .build();
+        } catch (RuntimeException e) {
+            Log.e("ASC.LivePlayer", "load control invalid, using default: "
+                    + e.getClass().getSimpleName());
+            load = new DefaultLoadControl();
+        }
         DefaultRenderersFactory renderers = new DefaultRenderersFactory(app)
                 .setEnableDecoderFallback(true);
         player = new ExoPlayer.Builder(app, renderers)

@@ -109,7 +109,14 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
     protected void onStart() {
         super.onStart();
         if (lp == null) {
-            return;
+            try {
+                lp = LivePlayer.get(this);
+            } catch (Exception e) {
+                Log.e("ASC.LivePlayer", "player create failed: " + e.getClass().getSimpleName());
+                lp = null;
+                showPlaybackError();
+                return;
+            }
         }
         if (pv == null) return;
         pv.setPlayer(lp.player());
@@ -259,6 +266,19 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
             return;
         }
         failed = false;
+        if (lp == null) {
+            // O player não existia (falhou ao criar): tenta criar de novo ao apertar OK.
+            try {
+                lp = LivePlayer.get(this);
+                if (pv != null) pv.setPlayer(lp.player());
+                lp.setListener(this);
+            } catch (Exception e) {
+                Log.e("ASC.LivePlayer", "player create failed: " + e.getClass().getSimpleName());
+                lp = null;
+                onFailed(g);
+                return;
+            }
+        }
         showInfo(g, LiveSession.variant >= 0 ? LiveSession.variant
                 : LivePlayer.autoVariant(this, g));
         int want = LiveSession.variant;
@@ -369,6 +389,7 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
     public void onFailed(ChannelGroup g) {
         failed = true;
         showPlaybackError();
+        if (infoName == null || infoNow == null || infoBar == null) return;
         infoName.setText(g.nome);
         infoNow.setText("Canal indisponível. Use cima ou baixo para trocar.");
         infoNow.setTextColor(C.ERROR);

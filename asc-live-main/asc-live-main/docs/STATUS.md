@@ -21,6 +21,14 @@ Feito (compilado só por sintaxe; o build do Actions e o teste no TX9 são a pro
 - Lista: já lia SÓ canais ao vivo (Xtream: `get_live_streams`; M3U: filtra `isLive`). Nada mudou aí.
 - **Favoritos antigos não valem mais** (a chave agora inclui a resolução): é só favoritar de novo.
 
+## Rodada 16 (canais não abriam: "Não foi possível reproduzir este canal")
+- [x] Causa: `DefaultLoadControl.setBufferDurationsMs(2500, 15000, 1200, 3000)` (Rodada 12) violava a regra do
+      ExoPlayer (buffer mínimo >= rebuffer). O `LivePlayer` lançava exceção ao ser criado, `lp` ficava nulo e
+      TODO canal mostrava o erro, sem sequer tentar a rede. Agora: `(3000, 15000, 1500, 3000)`, com reserva
+      para o `DefaultLoadControl` padrão se o construtor falhar.
+- [x] `LivePlayerActivity`: se o player não existir, tenta criar de novo (onStart e ao apertar OK); `onFailed` protegido.
+- [ ] Validar no TV Box: abrir um canal de verdade.
+
 ## Etapas
 - Build CI: Gradle Wrapper 8.7, AGP 8.5.2 e Java 17 validados localmente.
 - GitHub Actions configurado para testes, Debug, Release e artefatos.
