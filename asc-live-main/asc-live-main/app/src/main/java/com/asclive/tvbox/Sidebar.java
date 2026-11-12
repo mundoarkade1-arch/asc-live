@@ -13,8 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Barra lateral fina (só ícones, 72dp). Quando recebe foco, mostra os nomes num painel que
- * fica POR CIMA do conteúdo, sem refazer o layout das telas (para não pesar).
+ * Barra lateral em vidro fumê, sempre aberta, com ícone e nome de cada tela. Fica à esquerda,
+ * entre a barra de cima e a barra de dicas; o conteúdo ocupa o resto.
  */
 final class Sidebar extends LinearLayout {
 
@@ -64,17 +64,19 @@ final class Sidebar extends LinearLayout {
     Sidebar(Context c, Listener listener, String profileName, int profileAvatar) {
         super(c);
         this.listener = listener;
-        narrow = Ui.dp(c, 72);
-        wide = Ui.dp(c, 250);
+        narrow = Ui.dp(c, Ui.SIDEBAR_DP);
+        wide = narrow;
         setOrientation(VERTICAL);
-        setBackgroundColor(C.SMOKE);
+        setBackground(Ui.shape(0x66000000, Ui.dp(c, 22), C.GLASS_EDGE, Ui.dp(c, 1)));
         setPadding(0, Ui.dp(c, 18), 0, Ui.dp(c, 18));
-        setLayoutParams(new FrameLayout.LayoutParams(narrow, -1));
+        FrameLayout.LayoutParams slp = new FrameLayout.LayoutParams(narrow, -1);
+        slp.setMargins(Ui.dp(c, 16), Ui.dp(c, Ui.TOP_BAR_DP), 0, Ui.dp(c, Ui.HINT_BAR_DP + 12));
+        setLayoutParams(slp);
 
         addProfile(c, profileName, profileAvatar);
         addGap(c, 14);
-        addRow(c, FOOTBALL, R.drawable.ic_play, "Futebol");
-        addRow(c, LIVE, R.drawable.ic_tv, "Ao vivo");
+        addRow(c, FOOTBALL, R.drawable.ic_play, "Início");
+        addRow(c, LIVE, R.drawable.ic_tv, "Canais");
         addRow(c, FAVORITES, R.drawable.ic_bookmark, "Favoritos");
         addRow(c, SEARCH, R.drawable.ic_search, "Buscar");
         View spacer = new View(c);
@@ -149,7 +151,7 @@ final class Sidebar extends LinearLayout {
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setFocusable(true);
         row.setClickable(true);
-        row.setBackground(Ui.focusBg(c, 0x00000000, C.SURFACE_FOCUS, 14, 0x00000000, 0));
+        row.setBackground(Ui.focusBg(c, 0x00000000, C.GLASS_HI, 14, 0x00000000, 0));
         LayoutParams lp = new LayoutParams(-1, Ui.dp(c, 52));
         lp.setMargins(Ui.dp(c, 8), Ui.dp(c, 3), Ui.dp(c, 8), Ui.dp(c, 3));
         addView(row, lp);
@@ -192,7 +194,7 @@ final class Sidebar extends LinearLayout {
         alp.leftMargin = Ui.dp(c, 9);
         row.addView(av, alp);
         TextView label = Ui.text(c, name, 18, C.TEXT);
-        label.setVisibility(GONE);
+        label.setVisibility(VISIBLE);
         LayoutParams llp = new LayoutParams(0, -2, 1f);
         llp.leftMargin = Ui.dp(c, 14);
         row.addView(label, llp);
@@ -212,7 +214,7 @@ final class Sidebar extends LinearLayout {
         ilp.leftMargin = Ui.dp(c, 14);
         row.addView(icon, ilp);
         TextView label = Ui.text(c, text, 18, C.TEXT);
-        label.setVisibility(GONE);
+        label.setVisibility(VISIBLE);
         LayoutParams llp = new LayoutParams(0, -2, 1f);
         llp.leftMargin = Ui.dp(c, 16);
         row.addView(label, llp);
@@ -254,11 +256,10 @@ final class Sidebar extends LinearLayout {
     }
 
     private void syncExpanded() {
-        boolean open = hasFocus() && !holdCollapsed;
+        boolean open = true;
         for (Row r : rows) {
             r.label.setVisibility(open ? VISIBLE : GONE);
         }
-        setBackgroundColor(open ? C.SMOKE_DEEP : C.SMOKE);
         android.view.ViewGroup.LayoutParams lp = getLayoutParams();
         int w = open ? wide : narrow;
         if (lp != null && lp.width != w) {

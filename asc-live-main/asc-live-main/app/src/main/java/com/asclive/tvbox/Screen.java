@@ -50,6 +50,14 @@ abstract class Screen {
         return false;
     }
 
+    /**
+     * Dicas de teclas para a barra de baixo, no formato "TECLA:O que faz|TECLA:O que faz".
+     * Vazio = sem barra.
+     */
+    String hints() {
+        return "";
+    }
+
     /** A janela do app foi para trás (outra tela por cima ou app em segundo plano). */
     void onPause() {
     }

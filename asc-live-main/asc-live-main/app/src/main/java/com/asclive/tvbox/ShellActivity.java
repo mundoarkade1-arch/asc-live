@@ -8,13 +8,15 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 /**
- * Tela principal: barra lateral fina + a tela escolhida (Futebol, Ao vivo,
- * Favoritos, Busca, Ajustes). Só uma tela fica montada por vez, para poupar memória.
+ * Tela principal: barra de cima (logo, busca, hora) + barra lateral em vidro + a tela escolhida
+ * (Início, Canais, Favoritos, Busca, Ajustes) + barra de dicas embaixo. Só uma tela fica montada por vez, para poupar memória.
  */
 public class ShellActivity extends Activity implements Sidebar.Listener {
 
     private FrameLayout content;
     private Sidebar sidebar;
+    private TopBar topBar;
+    private android.widget.TextView hintBar;
     private Screen current;
     private int currentId = -1;
     private boolean armed = true;
@@ -33,10 +35,33 @@ public class ShellActivity extends Activity implements Sidebar.Listener {
         }
         FrameLayout root = new FrameLayout(this);
         root.setBackground(Ui.appBackground(this));
+        topBar = new TopBar(this, new TopBar.Listener() {
+            @Override
+            public void onSearch() {
+                onSelect(Sidebar.SEARCH);
+            }
+
+            @Override
+            public void onSettings() {
+                onSelect(Sidebar.SETTINGS);
+            }
+        });
+        root.addView(topBar, new FrameLayout.LayoutParams(-1, Ui.dp(this, Ui.TOP_BAR_DP)));
         content = new FrameLayout(this);
         FrameLayout.LayoutParams clp = new FrameLayout.LayoutParams(-1, -1);
-        clp.leftMargin = Ui.dp(this, 72);
+        clp.leftMargin = Ui.dp(this, 16 + Ui.SIDEBAR_DP + 8);
+        clp.topMargin = Ui.dp(this, Ui.TOP_BAR_DP);
+        clp.rightMargin = Ui.dp(this, 20);
+        clp.bottomMargin = Ui.dp(this, Ui.HINT_BAR_DP + 12);
         root.addView(content, clp);
+        hintBar = Ui.text(this, "", 16, C.TEXT2);
+        hintBar.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        hintBar.setPadding(Ui.dp(this, 24), 0, Ui.dp(this, 24), 0);
+        hintBar.setBackground(Ui.glass(this, 18));
+        FrameLayout.LayoutParams hlp = new FrameLayout.LayoutParams(-1, Ui.dp(this, Ui.HINT_BAR_DP));
+        hlp.gravity = android.view.Gravity.BOTTOM;
+        hlp.setMargins(Ui.dp(this, 16), 0, Ui.dp(this, 20), Ui.dp(this, 8));
+        root.addView(hintBar, hlp);
         Profiles.P p = Profiles.current(this);
         sidebar = new Sidebar(this, this, p.name, p.avatar);
         root.addView(sidebar);
@@ -96,6 +121,7 @@ public class ShellActivity extends Activity implements Sidebar.Listener {
         current = s;
         currentId = id;
         sidebar.setActive(id);
+        setHints(s.hints());
         content.addView(s.view(), new FrameLayout.LayoutParams(-1, -1));
         armed = true;
         s.onShow();
@@ -280,9 +306,35 @@ public class ShellActivity extends Activity implements Sidebar.Listener {
                 () -> android.os.Process.killProcess(android.os.Process.myPid()), 400);
     }
 
+    /** Escreve as dicas de teclas da barra de baixo: "TECLA:O que faz|TECLA:O que faz". */
+    private void setHints(String spec) {
+        android.text.SpannableStringBuilder sb = new android.text.SpannableStringBuilder();
+        if (spec != null && !spec.isEmpty()) {
+            for (String part : spec.split("\\|")) {
+                int cut = part.indexOf(':');
+                if (cut < 0) {
+                    continue;
+                }
+                if (sb.length() > 0) {
+                    sb.append("          ");
+                }
+                int from = sb.length();
+                sb.append(part.substring(0, cut));
+                sb.setSpan(new android.text.style.ForegroundColorSpan(C.LIME), from, sb.length(),
+                        android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                sb.append("  ").append(part.substring(cut + 1));
+            }
+        }
+        hintBar.setText(sb);
+        hintBar.setVisibility(sb.length() == 0 ? View.GONE : View.VISIBLE);
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
+        if (topBar != null) {
+            topBar.start();
+        }
         if (current != null) {
             current.onResume();
         }
@@ -290,6 +342,9 @@ public class ShellActivity extends Activity implements Sidebar.Listener {
 
     @Override
     protected void onPause() {
+        if (topBar != null) {
+            topBar.stop();
+        }
         if (current != null) {
             current.onPause();
         }

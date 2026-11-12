@@ -22,6 +22,11 @@ final class Ui {
     static final int DARK = 1;
     static final int LIME = 2;
 
+    /** Alturas e larguras fixas do quadro principal (em dp). */
+    static final int TOP_BAR_DP = 76;
+    static final int HINT_BAR_DP = 50;
+    static final int SIDEBAR_DP = 200;
+
     private static Typeface bold;
     private static Typeface medium;
 
