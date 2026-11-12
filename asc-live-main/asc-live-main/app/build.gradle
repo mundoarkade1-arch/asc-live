@@ -5,6 +5,11 @@ plugins {
 // O GitHub Actions passa estas duas variáveis (número da execução).
 def vCode = System.getenv('VERSION_CODE') ?: '1'
 def vName = System.getenv('VERSION_NAME') ?: '1.0.0'
+def releaseStoreFile = System.getenv('ASC_RELEASE_STORE_FILE')
+def releaseStorePassword = System.getenv('ASC_RELEASE_STORE_PASSWORD')
+def releaseKeyAlias = System.getenv('ASC_RELEASE_KEY_ALIAS')
+def releaseKeyPassword = System.getenv('ASC_RELEASE_KEY_PASSWORD')
+def hasReleaseSigning = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
 
 android {
     namespace 'com.asclive.tvbox'
@@ -18,9 +23,23 @@ android {
         versionName = vName
     }
 
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 

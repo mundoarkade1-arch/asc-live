@@ -43,6 +43,10 @@
 | M3uApi | Parser M3U: URLs, metadados e cabeçalhos por canal |
 | LivePlayer | Reprodução Media3 com DataSource e cabeçalhos por transmissão |
 | XtreamApi, LiveCache | Formato de reprodução e persistência de metadados IPTV |
+| `app/src/test/.../M3uApiHttpTest.java` | Teste local de download, redirect e erro HTTP da playlist M3U |
+| `app/src/test/.../XtreamApiTest.java` | Testes de geração de URLs Xtream |
+| `app/src/test/.../PlaybackDiagnosticsTest.java` | Testes do relatório persistente e sanitização |
+| PlaybackDiagnostics, PlaybackDiagnosticsDialog | Histórico privado, visualização e exportação do diagnóstico IPTV |
 
 ## Futebol (dados)
 | Arquivo | Para que serve |
@@ -51,6 +55,14 @@
 | Broadcasts | quais canais passam o jogo (tabela + nome dos times) |
 | `assets/ligas.json` | ligas consultadas (editável) |
 | `assets/transmissoes.json` | emissoras por liga (editável) |
+
+## Build e atualização
+| Arquivo | Para que serve |
+|---|---|
+| `gradlew`, `gradlew.bat`, `gradle/wrapper` | Gradle Wrapper 8.7 para build local e CI |
+| `.github/workflows/android.yml` | Testes, APKs, artefatos e Release assinado por tag |
+| `app/build.gradle` | Assinatura Release opcional por variáveis/segredos |
+| `Updater`, `UpdateUi` | Consulta GitHub, valida SHA-256 e abre o instalador Android |
 
 ## Ferramentas
 Ui, C, Bg, Dialogs, ImageLoader, AppPrefs.

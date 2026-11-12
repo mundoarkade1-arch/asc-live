@@ -1,0 +1,103 @@
+name: Android build
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  JAVA_VERSION: '17'
+  ANDROID_API_LEVEL: '34'
+  VERSION_CODE: ${{ github.run_number }}
+  VERSION_NAME: ${{ startsWith(github.ref_name, 'v') && github.ref_name || '0.0.0-' }}
+
+jobs:
+  build:
+    name: Test and build APKs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android platform and build tools
+        run: sdkmanager "platforms;android-${ANDROID_API_LEVEL}" "build-tools;34.0.0"
+
+      - name: Make Gradle executable
+        run: chmod +x gradlew
+
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest --no-daemon
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Prepare optional release signing
+        env:
+          ASC_RELEASE_KEYSTORE_BASE64: ${{ secrets.ASC_RELEASE_KEYSTORE_BASE64 }}
+          ASC_RELEASE_STORE_PASSWORD: ${{ secrets.ASC_RELEASE_STORE_PASSWORD }}
+          ASC_RELEASE_KEY_ALIAS: ${{ secrets.ASC_RELEASE_KEY_ALIAS }}
+          ASC_RELEASE_KEY_PASSWORD: ${{ secrets.ASC_RELEASE_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ASC_RELEASE_KEYSTORE_BASE64" ] && [ -n "$ASC_RELEASE_STORE_PASSWORD" ] && [ -n "$ASC_RELEASE_KEY_ALIAS" ] && [ -n "$ASC_RELEASE_KEY_PASSWORD" ]; then
+            printf '%s' "$ASC_RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/asc-live-release.jks"
+            echo "ASC_RELEASE_STORE_FILE=$RUNNER_TEMP/asc-live-release.jks" >> "$GITHUB_ENV"
+            echo "HAS_RELEASE_SIGNING=true" >> "$GITHUB_ENV"
+          else
+            echo "HAS_RELEASE_SIGNING=false" >> "$GITHUB_ENV"
+            echo "Release sem assinatura: secrets de assinatura não configurados; será gerado apenas o APK unsigned."
+          fi
+
+      - name: Build release APK
+        env:
+          ASC_RELEASE_STORE_PASSWORD: ${{ secrets.ASC_RELEASE_STORE_PASSWORD }}
+          ASC_RELEASE_KEY_ALIAS: ${{ secrets.ASC_RELEASE_KEY_ALIAS }}
+          ASC_RELEASE_KEY_PASSWORD: ${{ secrets.ASC_RELEASE_KEY_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: asc-live-apks-${{ github.run_number }}
+          path: app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+
+      - name: Publish signed GitHub Release for version tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ASC_RELEASE_STORE_PASSWORD: ${{ secrets.ASC_RELEASE_STORE_PASSWORD }}
+          ASC_RELEASE_KEY_ALIAS: ${{ secrets.ASC_RELEASE_KEY_ALIAS }}
+          ASC_RELEASE_KEY_PASSWORD: ${{ secrets.ASC_RELEASE_KEY_PASSWORD }}
+        run: |
+          if [ "$HAS_RELEASE_SIGNING" != "true" ]; then
+            echo "Release não publicado: assinatura não configurada."
+            exit 0
+          fi
+          test -f app/build/outputs/apk/release/app-release.apk
+          sha256sum app/build/outputs/apk/release/app-release.apk > app/build/outputs/apk/release/app-release.apk.sha256
+          SHA256=$(cut -d ' ' -f1 app/build/outputs/apk/release/app-release.apk.sha256)
+          cat > app/build/outputs/apk/release/version.json <<EOF
+          {"code":${VERSION_CODE},"name":"${VERSION_NAME#v}","url":"https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/app-release.apk","sha256":"$SHA256"}
+          EOF
+
+          gh release create "$GITHUB_REF_NAME" \
+            app/build/outputs/apk/release/app-release.apk \
+            app/build/outputs/apk/release/app-release.apk.sha256 \
+            app/build/outputs/apk/release/version.json \
+            --generate-notes \
+            --title "ASC Live ${VERSION_NAME#v}"

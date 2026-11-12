@@ -43,3 +43,10 @@
 20. **Cabeçalhos IPTV por canal:** o parser preserva URL efetiva, URL original e apenas cabeçalhos HTTP
     reconhecidos. O player cria um `DefaultHttpDataSource.Factory` por transmissão para que os cabeçalhos
     também sejam aplicados às requisições HLS e não vazem para outro canal.
+21. **Diagnóstico seguro do player:** não habilitar o `EventLogger` padrão porque ele pode registrar URI
+    completa em Logcat. Usar `AnalyticsListener` próprio com resumo seguro, Content-Type, estado, decoder,
+    primeiro frame e cadeia de causas, preservando a regra de nunca registrar credenciais ou URLs privadas.
+22. **Diagnóstico persistente:** cada sessão de reprodução grava eventos em arquivo privado, com rotação
+    limitada. A exportação passa pelo `FileProvider` existente e só disponibiliza uma cópia TXT sanitizada.
+23. **Build e distribuição:** Gradle Wrapper 8.7 com AGP 8.5.2. A assinatura Release depende de
+    segredos do repositório; tags `v*` publicam somente APK assinado, SHA-256 e `version.json`.

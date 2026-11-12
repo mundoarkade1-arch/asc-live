@@ -22,6 +22,10 @@ Feito (compilado só por sintaxe; o build do Actions e o teste no TX9 são a pro
 - **Favoritos antigos não valem mais** (a chave agora inclui a resolução): é só favoritar de novo.
 
 ## Etapas
+- Build CI: Gradle Wrapper 8.7, AGP 8.5.2 e Java 17 validados localmente.
+- GitHub Actions configurado para testes, Debug, Release e artefatos.
+- Assinatura Release depende dos segredos do repositório; sem eles o APK permanece unsigned.
+- Tags `v*` podem publicar Release assinado com SHA-256 e `version.json`.
 - [x] 0  Repositório criado (dono)
 - [x] 1  Renomear e limpar
 - [x] 2  Ler só os canais ao vivo (Catalog, LiveCache)
@@ -124,3 +128,22 @@ Feito (compilado só por sintaxe; o build do Actions e o teste no TX9 são a pro
 - [x] Timeouts ajustados para redes IPTV: conexão 15 s, leitura 30 s e watchdog de progresso 45 s.
 - [x] Criados testes unitários para parser, cabeçalhos, URLs longas e geração de URL Xtream.
 - [ ] Validar reprodução real, primeiro frame, áudio, troca de canais e respostas HTTP em TV Box; não há dispositivo nem credenciais reais neste ambiente.
+
+## Rodada 21 (instrumentação da primeira falha)
+- [x] Auditoria confirmou que M3U separa a URL antes de criar o `MediaItem` e que o `MediaSource` usa o `DataSource.Factory` específico do canal.
+- [x] Adicionados logs seguros de estado, etapa, requisição/resposta, Content-Type, formato detectado, decoder, primeiro frame e cadeia de exceções.
+- [x] URL completa não é registrada; o diagnóstico usa esquema, tamanho, presença de query e hash curto.
+- [x] O watchdog e as transições de retry agora registram a causa original antes de trocar de variante ou reconectar.
+- [x] Adicionado teste da construção de `MediaItem` HLS/TS.
+- [x] Adicionado teste local com servidor HTTP em memória para redirect, download M3U, UTF-8,
+      atributos EXTINF, cabeçalhos, query string e resposta 404.
+- [ ] Capturar Logcat em dispositivo real para identificar a primeira falha de rede, HTTP, parser ou decoder.
+
+## Rodada 22 (diagnóstico persistente no aparelho)
+- [x] Criado relatório privado por sessão em `files/playback-diagnostics`.
+- [x] Eventos existentes do `LivePlayer` são encaminhados para o relatório sem duplicar callbacks.
+- [x] A primeira falha é marcada separadamente dos retries, reconexões e resultado final.
+- [x] Relatórios antigos são rotacionados por quantidade e tamanho total.
+- [x] Configurações ganhou acesso por controle remoto para visualizar e exportar o último relatório.
+- [x] Exportação usa `FileProvider` e compartilhamento nativo do Android.
+- [ ] Validar a exportação em TV Box; não gerar APK nesta etapa.
