@@ -5,6 +5,7 @@ import android.os.Looper;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -22,6 +23,10 @@ final class EpgCache {
     /** epg vem null quando o canal não tem guia, ou quando nada passa agora. */
     interface Listener {
         void onEpg(XtreamApi.Epg epg);
+    }
+
+    interface ScheduleListener {
+        void onSchedule(List<XtreamApi.Program> programs);
     }
 
     private static final int MAX_ENTRIES = 80;
@@ -88,6 +93,21 @@ final class EpgCache {
                     }
                 });
             }
+        });
+    }
+
+    /** Busca o programa atual e os prÃ³ximos itens sem bloquear a tela. */
+    static void getSchedule(final String server, final String user, final String pass,
+                            final String streamId, final ScheduleListener listener) {
+        POOL.execute(() -> {
+            List<XtreamApi.Program> result = null;
+            try {
+                result = XtreamApi.schedule(server, user, pass, streamId);
+            } catch (Exception ignored) {
+                // a tela mostra programaÃ§Ã£o indisponÃ­vel
+            }
+            final List<XtreamApi.Program> out = result;
+            MAIN.post(() -> listener.onSchedule(out));
         });
     }
 

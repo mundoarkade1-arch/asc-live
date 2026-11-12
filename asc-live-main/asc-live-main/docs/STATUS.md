@@ -36,6 +36,21 @@ Feito (compilado só por sintaxe; o build do Actions e o teste no TX9 são a pro
 
 **Próximo passo: testar no aparelho** e corrigir o que aparecer (ver "Para testar" abaixo).
 
+## Rodada 12 (abertura direta do canal)
+- [x] Removida a capa opaca intermediÃ¡ria com "Abrindo..."; o PlayerView aparece imediatamente.
+- [x] A abertura continua usando o item exato selecionado, sem escolher outra resoluÃ§Ã£o.
+- [x] Buffer ao vivo ajustado para 2,5–15 s, com margem maior para oscilaÃ§Ãµes de IPTV e rebuffer de 3 s.
+- [ ] Validar no TV Box: tempo atÃ© o primeiro quadro, travamentos e reconexÃµes.
+
+## Rodada 13 (navegacao, futebol, EPG e tema)
+- [x] Sidebar substituida por navegacao superior compacta com foco visivel.
+- [x] Rodape de dicas removido da casca principal.
+- [x] Jogos do dia reorganizados em cards por campeonato, com estados carregando, erro e vazio.
+- [x] Canais correspondentes aparecem dentro do card do jogo e abrem com OK.
+- [x] EPG mostra o atual com progresso e ate seis proximos programas.
+- [x] Tema centralizado em salvia, marfim e vermilion, sem gradientes.
+- [ ] Compilar no GitHub Actions e validar no TV Box.
+
 ## Controle remoto no player
 - Baixo = próximo canal, Cima = canal anterior (como no ASC TV Box). OK = lista rápida. Números = digita o canal.
 - Menu (três listras) = programação do canal. Voltar = sai do player (ou fecha a lista).

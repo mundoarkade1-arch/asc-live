@@ -50,8 +50,9 @@ final class ChannelRow extends LinearLayout {
         words.setOrientation(VERTICAL);
         words.setGravity(Gravity.CENTER_VERTICAL);
         name = Ui.title(c, "", 18, C.TEXT);
-        name.setSingleLine(true);
-        name.setEllipsize(TextUtils.TruncateAt.END);
+        name.setSingleLine(false);
+        name.setMaxLines(2);
+        name.setEllipsize(null);
         words.addView(name);
         sub = Ui.text(c, "", 14, C.TEXT2);
         sub.setSingleLine(true);

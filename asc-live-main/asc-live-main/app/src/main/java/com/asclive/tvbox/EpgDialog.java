@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.text.SimpleDateFormat;
@@ -123,13 +124,43 @@ final class EpgDialog {
             status.setText("Programação indisponível para este canal.");
             return;
         }
-        status.setVisibility(View.GONE);
         long now = System.currentTimeMillis();
         SimpleDateFormat fmt = new SimpleDateFormat("HH:mm", Locale.getDefault());
+        XtreamApi.Program current = null;
         for (XtreamApi.Program p : programs) {
-            boolean current = p.start <= now && now < p.end;
+            if (p.start <= now && now < p.end) {
+                current = p;
+                break;
+            }
+        }
+        if (current != null) {
+            status.setText("Agora");
+            status.setTextColor(C.LIME);
+            ProgressBar progress = new ProgressBar(act, null,
+                    android.R.attr.progressBarStyleHorizontal);
+            progress.setMax(1000);
+            long total = Math.max(1L, current.end - current.start);
+            int value = (int) Math.max(0L, Math.min(1000L,
+                    (now - current.start) * 1000L / total));
+            progress.setProgress(value);
+            progress.setProgressTintList(android.content.res.ColorStateList.valueOf(C.LIME));
+            rows.addView(progress, new LinearLayout.LayoutParams(-1, Ui.dp(act, 6)));
+            addRow(act, rows, fmt.format(new Date(current.start)) + " - "
+                    + fmt.format(new Date(current.end)), current.title, true);
+        } else {
+            status.setText("PrÃ³ximos programas");
+            status.setTextColor(C.TEXT2);
+        }
+        int added = 0;
+        for (XtreamApi.Program p : programs) {
+            if (p == current || p.end <= now) {
+                continue;
+            }
+            if (added++ >= 6) {
+                break;
+            }
             addRow(act, rows, fmt.format(new Date(p.start)) + " - " + fmt.format(new Date(p.end)),
-                    p.title, current);
+                    p.title, false);
         }
     }
 

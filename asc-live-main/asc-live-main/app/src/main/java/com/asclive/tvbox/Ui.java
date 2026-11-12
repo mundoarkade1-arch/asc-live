@@ -5,7 +5,6 @@ import android.content.Context;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -24,8 +23,8 @@ final class Ui {
 
     /** Alturas e larguras fixas do quadro principal (em dp). */
     static final int TOP_BAR_DP = 76;
-    static final int HINT_BAR_DP = 50;
-    static final int SIDEBAR_DP = 200;
+    static final int HINT_BAR_DP = 0;
+    static final int SIDEBAR_DP = 0;
 
     private static Typeface bold;
     private static Typeface medium;
@@ -65,14 +64,7 @@ final class Ui {
      * (transparentes) ficam por cima dele. Sem imagem e sem blur: leve para TV Box antigo.
      */
     static Drawable appBackground(Context c) {
-        GradientDrawable base = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[]{0xFF17240B, 0xFF101010, 0xFF081820});
-        GradientDrawable glow = new GradientDrawable();
-        glow.setGradientType(GradientDrawable.RADIAL_GRADIENT);
-        glow.setColors(new int[]{0x2EC8FF00, 0x00C8FF00});
-        glow.setGradientCenter(0.92f, 0.05f);
-        glow.setGradientRadius(screenW(c) * 0.7f);
-        return new LayerDrawable(new Drawable[]{base, glow});
+        return shape(C.BG, 0, 0, 0);
     }
 
     static synchronized Typeface bold(Context c) {

@@ -123,7 +123,7 @@ final class LiveScreen extends Screen {
             return false;
         });
         catPanel.addView(catList, new FrameLayout.LayoutParams(-1, -1));
-        LinearLayout.LayoutParams cpl = new LinearLayout.LayoutParams(0, -1, 2.3f);
+        LinearLayout.LayoutParams cpl = new LinearLayout.LayoutParams(0, -1, 2.8f);
         cpl.rightMargin = Ui.dp(act, 12);
         cpl.bottomMargin = Ui.dp(act, 6);
         root.addView(catPanel, cpl);
@@ -164,7 +164,7 @@ final class LiveScreen extends Screen {
         notice.setPadding(Ui.dp(act, 24), 0, Ui.dp(act, 24), 0);
         chanPanel.addView(notice, new FrameLayout.LayoutParams(-1, -1));
         notice.setVisibility(View.GONE);
-        LinearLayout.LayoutParams chl = new LinearLayout.LayoutParams(0, -1, 4.4f);
+        LinearLayout.LayoutParams chl = new LinearLayout.LayoutParams(0, -1, 4.8f);
         chl.rightMargin = Ui.dp(act, 12);
         root.addView(chanPanel, chl);
 
@@ -228,13 +228,13 @@ final class LiveScreen extends Screen {
         nhl.topMargin = Ui.dp(act, 12);
         prog.addView(nextHead, nhl);
         dNext = Ui.text(act, "", 16, C.TEXT2);
-        dNext.setMaxLines(2);
+        dNext.setMaxLines(7);
         dNext.setEllipsize(TextUtils.TruncateAt.END);
         prog.addView(dNext, new LinearLayout.LayoutParams(-1, -2));
         LinearLayout.LayoutParams pl = new LinearLayout.LayoutParams(-1, -2);
         pl.topMargin = Ui.dp(act, 12);
         side.addView(prog, pl);
-        root.addView(side, new LinearLayout.LayoutParams(0, -1, 3.8f));
+        root.addView(side, new LinearLayout.LayoutParams(0, -1, 3.2f));
     }
 
     @Override
@@ -605,8 +605,9 @@ final class LiveScreen extends Screen {
             setGravity(Gravity.CENTER_VERTICAL);
             setPadding(Ui.dp(a, 14), Ui.dp(a, 12), Ui.dp(a, 14), Ui.dp(a, 12));
             name = Ui.text(a, "", 19, C.TEXT);
-            name.setSingleLine(true);
-            name.setEllipsize(TextUtils.TruncateAt.END);
+            name.setSingleLine(false);
+            name.setMaxLines(2);
+            name.setEllipsize(null);
             addView(name, new LayoutParams(0, -2, 1f));
             count = Ui.text(a, "", 15, C.TEXT2);
             LayoutParams cl = new LayoutParams(-2, -2);

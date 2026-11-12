@@ -11,6 +11,10 @@ Lê uma lista IPTV por servidor (Xtream Codes), link M3U ou código do aparelho.
 
 Documentos para quem for continuar o projeto: pasta `docs/` e arquivo `AGENTS.md`.
 
+## Tema visual
+
+Paleta central: verde salvia #4B5A50, marfim #F1EEE3 e vermilion #F20B0B.
+
 ## Como o APK nasce
 1. Você sobe os arquivos para o GitHub (branch `main`).
 2. O Actions compila, assina e publica uma Release (`v1`, `v2`...) com `ASC-Live.apk` e `version.json`.

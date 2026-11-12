@@ -28,7 +28,7 @@ import androidx.media3.ui.PlayerView;
  *   ASC TV Box. Cada canal tem a sua resolução no nome (SD, HD, FHD...).
  * - OK: lista rápida de canais. Números: digita o canal. Voltar: sai (ou fecha a lista).
  * - Tecla das três listras: programação do canal (login por servidor).
- * Mostra o logo e "Abrindo..." na hora, antes de o vídeo chegar.
+ * O PlayerView aparece imediatamente, sem uma tela intermediária opaca.
  */
 public class LivePlayerActivity extends Activity implements LivePlayer.Listener {
 
@@ -40,11 +40,6 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
     private LivePlayer lp;
     private PlayerView pv;
     private FrameLayout root;
-
-    private LinearLayout cover;
-    private ImageView coverLogo;
-    private TextView coverName;
-    private TextView coverNote;
 
     private LinearLayout infoBar;
     private TextView infoNumber;
@@ -128,27 +123,6 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
         pv.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
         pv.setShutterBackgroundColor(Color.BLACK);
         root.addView(pv, new FrameLayout.LayoutParams(-1, -1));
-
-        // Capa: logo + "Abrindo..." (também mostra o erro).
-        cover = new LinearLayout(this);
-        cover.setOrientation(LinearLayout.VERTICAL);
-        cover.setGravity(Gravity.CENTER);
-        cover.setBackgroundColor(C.BG);
-        coverLogo = new ImageView(this);
-        coverLogo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        cover.addView(coverLogo, new LinearLayout.LayoutParams(Ui.dp(this, 200),
-                Ui.dp(this, 120)));
-        coverName = Ui.title(this, "", 32, C.TEXT);
-        coverName.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(-2, -2);
-        nlp.topMargin = Ui.dp(this, 14);
-        cover.addView(coverName, nlp);
-        coverNote = Ui.text(this, "Abrindo...", 20, C.LIME);
-        coverNote.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(-2, -2);
-        clp.topMargin = Ui.dp(this, 10);
-        cover.addView(coverNote, clp);
-        root.addView(cover, new FrameLayout.LayoutParams(-1, -1));
 
         // Faixa de informação (embaixo): número, nome e versão.
         infoBar = new LinearLayout(this);
@@ -252,7 +226,6 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
             return;
         }
         failed = false;
-        showCover(g, "Abrindo...");
         showInfo(g, LiveSession.variant >= 0 ? LiveSession.variant
                 : LivePlayer.autoVariant(this, g));
         int want = LiveSession.variant;
@@ -264,7 +237,6 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
     private void schedulePlay(long delay) {
         ChannelGroup g = LiveSession.current();
         if (g != null) {
-            showCover(g, "Abrindo...");
             showInfo(g, LivePlayer.autoVariant(this, g));
         }
         main.removeCallbacks(doPlay);
@@ -282,14 +254,6 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
     }
 
     // ---------- Avisos na tela ----------
-
-    private void showCover(ChannelGroup g, String note) {
-        cover.setVisibility(View.VISIBLE);
-        coverName.setText(g.nome);
-        coverNote.setText(note);
-        coverNote.setTextColor(C.LIME);
-        ImageLoader.load(coverLogo, g.logo, 480);
-    }
 
     private void showInfo(ChannelGroup g, int variantIndex) {
         int number = LiveSession.index + 1;
@@ -349,28 +313,24 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
 
     @Override
     public void onOpening(ChannelGroup g, int variantIndex) {
-        String note = "Abrindo...";
         if (variantIndex > 0 && g.variants.size() > 1) {
             String l = g.variants.get(variantIndex).label();
-            note = l.isEmpty() ? "Tentando outra versão..." : "Tentando versão " + l + "...";
         }
-        coverNote.setText(note);
-        coverNote.setTextColor(C.LIME);
     }
 
     @Override
     public void onPlaying(ChannelGroup g, int variantIndex) {
         failed = false;
-        cover.setVisibility(View.GONE);
         showInfo(g, variantIndex);
     }
 
     @Override
     public void onFailed(ChannelGroup g) {
         failed = true;
-        cover.setVisibility(View.VISIBLE);
-        coverNote.setText("Este canal não abriu. Use cima ou baixo para trocar de canal.");
-        coverNote.setTextColor(C.ERROR);
+        infoName.setText(g.nome);
+        infoNow.setText("Canal indisponível. Use cima ou baixo para trocar.");
+        infoNow.setTextColor(C.ERROR);
+        infoBar.setVisibility(View.VISIBLE);
     }
 
     // ---------- Lista rápida ----------

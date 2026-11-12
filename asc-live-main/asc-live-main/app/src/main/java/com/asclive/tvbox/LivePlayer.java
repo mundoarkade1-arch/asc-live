@@ -112,7 +112,7 @@ final class LivePlayer {
                 .setTsExtractorFlags(DefaultTsPayloadReaderFactory.FLAG_ALLOW_NON_IDR_KEYFRAMES);
         // Buffer de ao vivo: abre rápido (0,5 s) e guarda pouco (1,5 s a 8 s).
         DefaultLoadControl load = new DefaultLoadControl.Builder()
-                .setBufferDurationsMs(1500, 8000, 500, 1000)
+                .setBufferDurationsMs(2500, 15000, 1200, 3000)
                 .build();
         DefaultRenderersFactory renderers = new DefaultRenderersFactory(app)
                 .setEnableDecoderFallback(true);
