@@ -117,7 +117,8 @@ public class ShellActivity extends Activity implements Sidebar.Listener {
         if (current != null) current.onPause();
     }
 
-    private void onSelect(int id) {
+    @Override
+    public void onSelect(int id) {
         if (id == Sidebar.REFRESH) {
             Catalog.invalidate();
             ImageLoader.clear();
