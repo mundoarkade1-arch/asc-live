@@ -17,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.ProgressBar;
 
 import androidx.media3.ui.AspectRatioFrameLayout;
 import androidx.media3.ui.PlayerView;
@@ -41,6 +42,8 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
     private LivePlayer lp;
     private PlayerView pv;
     private FrameLayout root;
+    private ProgressBar loading;
+    private TextView playbackState;
 
     private LinearLayout infoBar;
     private TextView infoNumber;
@@ -76,10 +79,13 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
             lp = LivePlayer.get(this);
         } catch (Exception e) {
             Log.e("ASC.LivePlayer", "activity init failed: " + e.getClass().getSimpleName());
-            TextView error = Ui.text(this, "N\u00e3o foi poss\u00edvel abrir o canal.", 22, C.TEXT);
-            error.setGravity(Gravity.CENTER);
-            setContentView(error);
+            if (root == null) {
+                root = new FrameLayout(this);
+                root.setBackgroundColor(Color.BLACK);
+            }
+            setContentView(root);
             lp = null;
+            showPlaybackError();
         }
     }
 
@@ -133,6 +139,23 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
         pv.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
         pv.setShutterBackgroundColor(Color.BLACK);
         root.addView(pv, new FrameLayout.LayoutParams(-1, -1));
+
+        loading = new ProgressBar(this);
+        loading.setIndeterminate(true);
+        FrameLayout.LayoutParams loadingLp = new FrameLayout.LayoutParams(
+                Ui.dp(this, 48), Ui.dp(this, 48), Gravity.CENTER);
+        root.addView(loading, loadingLp);
+
+        playbackState = Ui.text(this, "", 18, C.TEXT2);
+        playbackState.setGravity(Gravity.CENTER);
+        playbackState.setPadding(Ui.dp(this, 24), Ui.dp(this, 16),
+                Ui.dp(this, 24), Ui.dp(this, 16));
+        playbackState.setBackground(Ui.shape(C.SHADE, Ui.dp(this, 12), 0, 0));
+        playbackState.setVisibility(View.GONE);
+        playbackState.setFocusable(true);
+        playbackState.setOnClickListener(v -> playCurrent());
+        FrameLayout.LayoutParams stateLp = new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER);
+        root.addView(playbackState, stateLp);
 
         // Faixa de informação (embaixo): número, nome e versão.
         infoBar = new LinearLayout(this);
@@ -328,6 +351,7 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
 
     @Override
     public void onOpening(ChannelGroup g, int variantIndex) {
+        showPlaybackLoading();
         if (variantIndex > 0 && g.variants.size() > 1) {
             String l = g.variants.get(variantIndex).label();
         }
@@ -336,16 +360,34 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
     @Override
     public void onPlaying(ChannelGroup g, int variantIndex) {
         failed = false;
+        if (loading != null) loading.setVisibility(View.GONE);
+        if (playbackState != null) playbackState.setVisibility(View.GONE);
         showInfo(g, variantIndex);
     }
 
     @Override
     public void onFailed(ChannelGroup g) {
         failed = true;
+        showPlaybackError();
         infoName.setText(g.nome);
         infoNow.setText("Canal indisponível. Use cima ou baixo para trocar.");
         infoNow.setTextColor(C.ERROR);
         infoBar.setVisibility(View.VISIBLE);
+    }
+
+    private void showPlaybackLoading() {
+        if (loading != null) loading.setVisibility(View.VISIBLE);
+        if (playbackState != null) playbackState.setVisibility(View.GONE);
+    }
+
+    private void showPlaybackError() {
+        if (loading != null) loading.setVisibility(View.GONE);
+        if (playbackState != null) {
+            playbackState.setText("Não foi possível reproduzir este canal.\nPressione OK para tentar novamente.");
+            playbackState.setTextColor(C.TEXT);
+            playbackState.setVisibility(View.VISIBLE);
+            playbackState.requestFocus();
+        }
     }
 
     // ---------- Lista rápida ----------

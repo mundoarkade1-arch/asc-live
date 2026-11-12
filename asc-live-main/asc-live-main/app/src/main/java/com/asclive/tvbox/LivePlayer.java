@@ -74,6 +74,8 @@ final class LivePlayer {
     private boolean active;
     private boolean attemptOk;
     private boolean stallArmed;
+    /** Evita que erro, STATE_ENDED e o watchdog processem a mesma tentativa duas vezes. */
+    private boolean failureHandled;
     private boolean triedXtreamFormat;
     private String forcedUrl;
 
@@ -136,6 +138,9 @@ final class LivePlayer {
 
             @Override
             public void onPlayerError(PlaybackException error) {
+                Log.e("ASC.LivePlayer", "playback error code=" + error.errorCode
+                        + " cause=" + (error.getCause() == null
+                        ? "unknown" : error.getCause().getClass().getSimpleName()));
                 if (active) {
                     onFail();
                 }
@@ -229,14 +234,31 @@ final class LivePlayer {
         String url = forcedUrl != null ? forcedUrl : Catalog.urlOf(app, g.variants.get(vi).item);
         forcedUrl = null;
         attemptOk = false;
+        failureHandled = false;
         if (url == null) {
+            Log.e("ASC.LivePlayer", "media source missing for selected channel");
+            onFail();
+            return;
+        }
+        Uri mediaUri;
+        try {
+            mediaUri = Uri.parse(url);
+            String scheme = mediaUri.getScheme();
+            if (mediaUri.getHost() == null
+                    || !("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))) {
+                Log.e("ASC.LivePlayer", "media source has invalid scheme or host");
+                onFail();
+                return;
+            }
+        } catch (Exception e) {
+            Log.e("ASC.LivePlayer", "media source URI is invalid: " + e.getClass().getSimpleName());
             onFail();
             return;
         }
         if (listener != null) {
             listener.onOpening(g, vi);
         }
-        MediaItem.Builder b = new MediaItem.Builder().setUri(url);
+        MediaItem.Builder b = new MediaItem.Builder().setUri(mediaUri);
         if (pathOf(url).endsWith(".m3u8")) {
             b.setMimeType(MimeTypes.APPLICATION_M3U8); // não precisa adivinhar o formato
         }
@@ -283,6 +305,10 @@ final class LivePlayer {
 
     /** Erro ou travada: próxima versão; se acabaram, reconecta (1 s, 2 s, 4 s); depois, erro. */
     private void onFail() {
+        if (failureHandled) {
+            return;
+        }
+        failureHandled = true;
         main.removeCallbacks(stall);
         stallArmed = false;
         if (order.length == 0) {

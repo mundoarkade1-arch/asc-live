@@ -99,3 +99,11 @@ Feito (compilado só por sintaxe; o build do Actions e o teste no TX9 são a pro
 - [x] Tela inicial refeita com faixa horizontal de jogos, foco remoto e painel de destaque.
 - [x] Canais relacionados aparecem no painel da partida e abrem o player existente diretamente.
 - [ ] Validar visual e foco no TV Box.
+
+## Rodada 18 (diagnóstico e proteção do fluxo do player)
+- [x] Validada a cadeia de abertura: seleção da grade -> `LiveSession` em memória -> `LivePlayerActivity` -> `LivePlayer`/Media3.
+- [x] Player valida esquema e host da fonte antes de preparar a mídia; falha de URL não derruba a Activity.
+- [x] Erros Media3 registram somente código e tipo da causa, sem URL, usuário, senha ou servidor.
+- [x] Adicionada proteção contra processamento duplicado do mesmo erro/watchdog.
+- [x] O carregamento aparece como indicador discreto sobre o `PlayerView`; erro oferece OK para tentar novamente e BACK para sair.
+- [ ] Validar reprodução real no TV Box; não há ADB/emulador disponível neste ambiente.
