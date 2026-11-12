@@ -113,8 +113,7 @@ final class FootballApi {
 
     private static void fetchAll(List<League> leagues, final String day, List<Match> out,
                                  int[] okCount, int[] failCount) {
-        // Pede de ontem a amanhã e filtra pelo dia local: o fuso da ESPN pode ser outro.
-        final String range = shiftDay(-1) + "-" + shiftDay(1);
+        // A ESPN aceita uma data por consulta; buscamos ontem, hoje e amanhã para cobrir fuso.
         ExecutorService pool = Executors.newFixedThreadPool(4);
         try {
             List<Callable<List<Match>>> jobs = new ArrayList<>();
@@ -122,7 +121,7 @@ final class FootballApi {
                 jobs.add(new Callable<List<Match>>() {
                     @Override
                     public List<Match> call() throws Exception {
-                        return fetchLeague(l, range, day);
+                        return fetchLeague(l, day);
                     }
                 });
             }
@@ -149,11 +148,21 @@ final class FootballApi {
         }
     }
 
-    private static List<Match> fetchLeague(League l, String range, String day) throws Exception {
+    private static List<Match> fetchLeague(League l, String day) throws Exception {
         if (!l.id.matches("[a-z0-9._-]{1,60}")) {
             return new ArrayList<>();
         }
-        URL url = new URL(BASE + l.id + "/scoreboard?dates=" + range);
+        List<Match> all = new ArrayList<>();
+        String[] days = {shiftDay(-1), day, shiftDay(1)};
+        for (String requestedDay : days) {
+            all.addAll(fetchLeagueDate(l, requestedDay, day));
+        }
+        return all;
+    }
+
+    private static List<Match> fetchLeagueDate(League l, String requestedDay, String day)
+            throws Exception {
+        URL url = new URL(BASE + l.id + "/scoreboard?dates=" + requestedDay);
         if (!"https".equals(url.getProtocol())) {
             throw new IllegalStateException("so https");
         }

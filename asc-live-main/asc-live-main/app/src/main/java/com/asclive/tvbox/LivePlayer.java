@@ -74,6 +74,8 @@ final class LivePlayer {
     private boolean active;
     private boolean attemptOk;
     private boolean stallArmed;
+    private boolean triedXtreamFormat;
+    private String forcedUrl;
 
     private final Runnable stall = new Runnable() {
         @Override
@@ -174,6 +176,8 @@ final class LivePlayer {
         main.removeCallbacks(stall);
         stallArmed = false;
         group = g;
+        triedXtreamFormat = false;
+        forcedUrl = null;
         int start = versao >= 0 && versao < g.variants.size() ? versao : autoVariant(app, g);
         order = buildOrder(g, start);
         pos = 0;
@@ -222,7 +226,8 @@ final class LivePlayer {
             return;
         }
         final int vi = order[pos];
-        String url = Catalog.urlOf(app, g.variants.get(vi).item);
+        String url = forcedUrl != null ? forcedUrl : Catalog.urlOf(app, g.variants.get(vi).item);
+        forcedUrl = null;
         attemptOk = false;
         if (url == null) {
             onFail();
@@ -306,6 +311,19 @@ final class LivePlayer {
             }, wait);
             return;
         }
+        if (!triedXtreamFormat && !Catalog.isM3u(Catalog.creds(app))) {
+            String primary = Catalog.urlOf(app, group.variants.get(order[0]).item);
+            String alternate = alternateFormat(primary);
+            if (alternate != null) {
+                triedXtreamFormat = true;
+                forcedUrl = alternate;
+                round = 0;
+                order = new int[]{order[0]};
+                pos = 0;
+                startAttempt();
+                return;
+            }
+        }
         active = false;
         player.stop();
         if (listener != null && group != null) {
@@ -317,6 +335,16 @@ final class LivePlayer {
         String u = url.toLowerCase(Locale.ROOT);
         int q = u.indexOf('?');
         return q >= 0 ? u.substring(0, q) : u;
+    }
+
+    private static String alternateFormat(String url) {
+        if (url == null) return null;
+        int q = url.indexOf('?');
+        String path = q >= 0 ? url.substring(0, q) : url;
+        String suffix = q >= 0 ? url.substring(q) : "";
+        if (path.endsWith(".ts")) return path.substring(0, path.length() - 3) + "m3u8" + suffix;
+        if (path.endsWith(".m3u8")) return path.substring(0, path.length() - 5) + "ts" + suffix;
+        return null;
     }
 
     // ---------- Qual versão abrir ----------

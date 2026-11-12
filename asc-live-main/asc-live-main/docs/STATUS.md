@@ -64,6 +64,12 @@ Feito (compilado só por sintaxe; o build do Actions e o teste no TX9 são a pro
 - [x] Canais e EpgDialog mostram o programa atual e até cinco próximos; Xtream solicita 10 itens.
 - [ ] Compilar no GitHub Actions e validar no TV Box.
 
+## Rodada 15 (correção após teste do dono)
+- [x] Corrigada a consulta ESPN: o endpoint não aceita intervalo de datas; agora consulta ontem, hoje e amanhã separadamente.
+- [x] Os IDs das ligas retornam HTTP 200; eventos do dia passam a ser processados corretamente.
+- [x] Xtream passa a tentar `.ts`, formato mais compatível para canais ao vivo, e tenta `.m3u8` como reserva no mesmo canal.
+- [ ] Validar abertura de canal e jogos no TV Box com a nova versão.
+
 ## Para testar (o que ninguém viu rodando)
 1. Build do GitHub passa? (a API do `androidx.media3` 1.4.1 foi escrita de memória; se o build reclamar
    de algum método do `LivePlayer`, é lá.)

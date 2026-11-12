@@ -390,7 +390,8 @@ public final class XtreamApi {
         }
         String base = server + "/";
         String u = Uri.encode(user) + "/" + Uri.encode(pass) + "/";
-        return base + "live/" + u + item.id + ".m3u8";
+        // .ts é o formato ao vivo mais compatível entre servidores Xtream.
+        return base + "live/" + u + item.id + ".ts";
     }
 
     // ---------- Leitura de um canal ----------
