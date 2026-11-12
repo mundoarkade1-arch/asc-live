@@ -86,3 +86,9 @@ Feito (compilado só por sintaxe; o build do Actions e o teste no TX9 são a pro
   uma "tela" do servidor IPTV.
 - Jogos encerrados aparecem depois dos que vão começar (ao vivo sempre primeiro).
 - Nenhum endereço de canal, usuário, senha ou servidor é registrado em log.
+## Rodada 16 (ajuste de canais e cards de jogos)
+- [x] OK/Enter do controle remoto agora dispara o clique da grade mesmo quando o aparelho não marca o evento como tracking.
+- [x] Cards de jogos deixaram de listar linhas grandes de canais.
+- [x] Emissoras e canais aparecem como ícones horizontais compactos.
+- [x] Clique no card abre o primeiro canal transmissor; clique no ícone abre aquele canal específico.
+- [ ] Validar o fluxo completo no TV Box.

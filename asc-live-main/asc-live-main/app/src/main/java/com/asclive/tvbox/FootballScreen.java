@@ -8,6 +8,7 @@ import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -181,18 +182,24 @@ final class FootballScreen extends Screen {
         LinearLayout card = new LinearLayout(act);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(Ui.dp(act, 16), Ui.dp(act, 12), Ui.dp(act, 16), Ui.dp(act, 12));
-        card.setBackground(Ui.glass(act, 16));
+        card.setFocusable(true);
+        card.setClickable(true);
+        card.setBackground(Ui.softFocusBg(act, C.SURFACE_FOCUS, 16));
         LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(-1, -2);
         clp.bottomMargin = Ui.dp(act, 10);
         cardsBox.addView(card, clp);
+        final ChannelGroup[] primary = new ChannelGroup[1];
+        card.setOnClickListener(v -> {
+            if (primary[0] != null) {
+                play(primary[0]);
+            } else {
+                Ui.toast(act, "Nenhum canal encontrado para este jogo.");
+            }
+        });
 
         LinearLayout matchLine = new LinearLayout(act);
         matchLine.setGravity(Gravity.CENTER_VERTICAL);
-        matchLine.setFocusable(true);
-        matchLine.setClickable(true);
         matchLine.setPadding(Ui.dp(act, 4), Ui.dp(act, 2), Ui.dp(act, 4), Ui.dp(act, 8));
-        matchLine.setBackground(Ui.focusBg(act, 0x00000000, C.SURFACE_FOCUS, 12, C.LIME,
-                Ui.dp(act, 2)));
         addShield(matchLine, match.escudoCasa);
         TextView teams = Ui.title(act, match.casa + "  x  " + match.fora, 20, C.TEXT);
         teams.setSingleLine(true);
@@ -215,7 +222,7 @@ final class FootballScreen extends Screen {
         TextView loading = Ui.text(act, "Procurando canais...", 14, C.TEXT2);
         channels.addView(loading);
         card.addView(channels, new LinearLayout.LayoutParams(-1, -2));
-        loadChannels(match, channels);
+        loadChannels(match, channels, primary);
     }
 
     private void addShield(LinearLayout row, String url) {
@@ -239,26 +246,42 @@ final class FootballScreen extends Screen {
         return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(m.horario));
     }
 
-    private void loadChannels(final Match match, final LinearLayout target) {
+    private void loadChannels(final Match match, final LinearLayout target,
+                              final ChannelGroup[] primary) {
         bg(() -> Broadcasts.channelsFor(act, match), new Bg.Done<List<Broadcasts.Broadcast>>() {
             @Override
             public void ok(List<Broadcasts.Broadcast> groups) {
                 target.removeAllViews();
                 int count = 0;
+                ChannelGroup fallback = null;
                 for (Broadcasts.Broadcast group : groups) {
                     TextView label = Ui.text(act, group.emissora, 14, C.TEXT2);
                     label.setTypeface(Ui.bold(act), Typeface.BOLD);
                     LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(-1, -2);
                     llp.topMargin = Ui.dp(act, 6);
                     target.addView(label, llp);
+                    LinearLayout row = new LinearLayout(act);
+                    row.setOrientation(LinearLayout.HORIZONTAL);
+                    row.setGravity(Gravity.CENTER_VERTICAL);
+                    HorizontalScrollView scroll = new HorizontalScrollView(act);
+                    scroll.setHorizontalScrollBarEnabled(false);
+                    scroll.addView(row, new HorizontalScrollView.LayoutParams(-2, -2));
+                    target.addView(scroll, new LinearLayout.LayoutParams(-1, Ui.dp(act, 82)));
                     for (ChannelGroup channel : group.canais) {
-                        addChannel(target, channel);
+                        if (fallback == null) fallback = channel;
+                        if (primary[0] == null && !"Canais do jogo".equals(group.emissora)) {
+                            primary[0] = channel;
+                        }
+                        addChannelIcon(row, channel);
                         count++;
+                        if (count >= 16) break;
                     }
+                    if (count >= 16) break;
                 }
+                if (primary[0] == null) primary[0] = fallback;
                 if (count == 0) {
-                    target.addView(Ui.text(act, "Nenhum canal correspondente na sua lista.", 14,
-                            C.TEXT3));
+                    target.addView(Ui.text(act, "Nenhum canal correspondente na sua lista.",
+                            14, C.TEXT3));
                 }
             }
 
@@ -270,17 +293,27 @@ final class FootballScreen extends Screen {
         });
     }
 
-    private void addChannel(LinearLayout target, final ChannelGroup channel) {
-        ChannelRow row = new ChannelRow(act, false);
-        row.bind(0, channel, Favorites.isFavorite(act, channel.key()), "Abrir canal");
-        row.setFocusable(true);
-        row.setClickable(true);
-        row.setBackground(Ui.focusBg(act, C.SURFACE, C.SURFACE_FOCUS, 12, C.LIME,
-                Ui.dp(act, 2)));
-        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(-1, Ui.dp(act, 58));
-        rlp.topMargin = Ui.dp(act, 4);
-        target.addView(row, rlp);
-        row.setOnClickListener(v -> play(channel));
+    private void addChannelIcon(LinearLayout target, final ChannelGroup channel) {
+        LinearLayout item = new LinearLayout(act);
+        item.setOrientation(LinearLayout.VERTICAL);
+        item.setGravity(Gravity.CENTER);
+        item.setFocusable(true);
+        item.setClickable(true);
+        item.setPadding(Ui.dp(act, 7), Ui.dp(act, 3), Ui.dp(act, 7), Ui.dp(act, 3));
+        item.setBackground(Ui.softFocusBg(act, C.SURFACE_FOCUS, 10));
+        ImageView logo = new ImageView(act);
+        logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        ImageLoader.load(logo, channel.logo, 120);
+        item.addView(logo, new LinearLayout.LayoutParams(Ui.dp(act, 42), Ui.dp(act, 42)));
+        TextView name = Ui.text(act, channel.nome, 11, C.TEXT);
+        name.setGravity(Gravity.CENTER);
+        name.setMaxLines(1);
+        name.setEllipsize(TextUtils.TruncateAt.END);
+        item.addView(name, new LinearLayout.LayoutParams(Ui.dp(act, 76), Ui.dp(act, 20)));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(Ui.dp(act, 82), Ui.dp(act, 74));
+        lp.rightMargin = Ui.dp(act, 5);
+        target.addView(item, lp);
+        item.setOnClickListener(v -> play(channel));
     }
 
     private void play(ChannelGroup channel) {

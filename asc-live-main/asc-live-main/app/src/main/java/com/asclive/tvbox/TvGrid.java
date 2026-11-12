@@ -36,7 +36,8 @@ final class TvGrid extends GridView {
     }
 
     private static boolean isOk(int keyCode) {
-        return keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER;
+        return keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER
+                || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER || keyCode == KeyEvent.KEYCODE_BUTTON_A;
     }
 
     @Override
@@ -73,7 +74,7 @@ final class TvGrid extends GridView {
             }
             int pos = getSelectedItemPosition();
             View v = getSelectedView();
-            if (event.isTracking() && !event.isCanceled() && pos >= 0 && v != null
+            if (!event.isCanceled() && pos >= 0 && v != null
                     && getAdapter() != null) {
                 performItemClick(v, pos, getAdapter().getItemId(pos));
             }
