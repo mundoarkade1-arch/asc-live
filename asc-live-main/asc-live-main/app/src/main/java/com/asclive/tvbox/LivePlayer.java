@@ -12,11 +12,13 @@ import androidx.media3.common.MediaItem;
 import androidx.media3.common.MimeTypes;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
+import androidx.media3.datasource.HttpDataSource;
 import androidx.media3.exoplayer.DefaultLoadControl;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
+import androidx.media3.exoplayer.source.MediaSource;
 import androidx.media3.extractor.DefaultExtractorsFactory;
 import androidx.media3.extractor.ts.DefaultTsPayloadReaderFactory;
 
@@ -24,6 +26,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Locale;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -51,7 +55,8 @@ final class LivePlayer {
         void onFailed(ChannelGroup g);
     }
 
-    static final long STALL_MS = 8000L;
+    /** Falha somente depois de uma janela longa sem READY/erro; BUFFERING continua sendo estado. */
+    static final long STALL_MS = 45000L;
     private static final int MAX_RECONNECTS = 3;
     private static final String PREFS_LAST = "asc_live_last";
     private static final String USER_AGENT = "ASC-Cine/1.0 (Android)";
@@ -63,6 +68,7 @@ final class LivePlayer {
 
     private final Context app;
     private final ExoPlayer player;
+    private final DefaultExtractorsFactory extractors;
     private final Handler main = new Handler(Looper.getMainLooper());
     private Listener listener;
 
@@ -109,11 +115,11 @@ final class LivePlayer {
         this.app = app;
         DefaultHttpDataSource.Factory http = new DefaultHttpDataSource.Factory()
                 .setUserAgent(USER_AGENT)
-                .setConnectTimeoutMs(4000)
-                .setReadTimeoutMs(6000)
+                .setConnectTimeoutMs(15000)
+                .setReadTimeoutMs(30000)
                 .setAllowCrossProtocolRedirects(true)
                 .setKeepPostFor302Redirects(true);
-        DefaultExtractorsFactory extractors = new DefaultExtractorsFactory()
+        extractors = new DefaultExtractorsFactory()
                 .setTsExtractorFlags(DefaultTsPayloadReaderFactory.FLAG_ALLOW_NON_IDR_KEYFRAMES);
         // Buffer de ao vivo: abre rápido (0,5 s) e guarda pouco (1,5 s a 8 s).
         DefaultLoadControl load = new DefaultLoadControl.Builder()
@@ -139,7 +145,7 @@ final class LivePlayer {
             @Override
             public void onPlayerError(PlaybackException error) {
                 Log.e("ASC.LivePlayer", "playback error code=" + error.errorCode
-                        + " type=" + causeType(error));
+                        + " type=" + causeType(error) + " http=" + httpCode(error));
                 if (active) {
                     onFail();
                 }
@@ -260,12 +266,28 @@ final class LivePlayer {
         Log.i("ASC.LivePlayer", "opening channel=" + safeName(g) + " id="
                 + safeId(g) + " format=" + pathOf(url).substring(Math.max(0,
                 pathOf(url).lastIndexOf('.') + 1)));
+        XtreamApi.Item item = g.variants.get(vi).item;
+        Map<String, String> headers = new LinkedHashMap<>(item.headers);
+        if (!headers.containsKey("User-Agent")) {
+            headers.put("User-Agent", USER_AGENT);
+        }
+        DefaultHttpDataSource.Factory channelHttp = new DefaultHttpDataSource.Factory()
+                .setDefaultRequestProperties(headers)
+                .setConnectTimeoutMs(15000)
+                .setReadTimeoutMs(30000)
+                .setAllowCrossProtocolRedirects(true)
+                .setKeepPostFor302Redirects(true);
         MediaItem.Builder b = new MediaItem.Builder().setUri(mediaUri);
         if (pathOf(url).endsWith(".m3u8")) {
             b.setMimeType(MimeTypes.APPLICATION_M3U8); // não precisa adivinhar o formato
         }
         try {
-            player.setMediaItem(b.build());
+            MediaSource source = new DefaultMediaSourceFactory(channelHttp, extractors)
+                    .createMediaSource(b.build());
+            Log.d("ASC.LivePlayer", "media source configured channel=" + safeName(g)
+                    + " hls=" + pathOf(url).endsWith(".m3u8")
+                    + " headers=" + headerSummary(headers));
+            player.setMediaSource(source);
             player.prepare();
             player.setPlayWhenReady(true);
         } catch (Exception e) {
@@ -386,6 +408,23 @@ final class LivePlayer {
                     || n.contains("Decoder") || n.contains("DataSource")) return n;
         }
         return error == null ? "unknown" : error.getClass().getSimpleName();
+    }
+
+    private static int httpCode(Throwable error) {
+        Throwable t = error;
+        for (int i = 0; t != null && i < 6; i++, t = t.getCause()) {
+            if (t instanceof HttpDataSource.InvalidResponseCodeException) {
+                return ((HttpDataSource.InvalidResponseCodeException) t).responseCode;
+            }
+        }
+        return -1;
+    }
+
+    private static String headerSummary(Map<String, String> headers) {
+        return "ua=" + headers.containsKey("User-Agent")
+                + ",referer=" + headers.containsKey("Referer")
+                + ",cookie=" + headers.containsKey("Cookie")
+                + ",origin=" + headers.containsKey("Origin");
     }
 
     private static String alternateFormat(String url) {

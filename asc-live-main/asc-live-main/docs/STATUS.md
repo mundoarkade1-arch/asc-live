@@ -115,3 +115,12 @@ Feito (compilado só por sintaxe; o build do Actions e o teste no TX9 são a pro
 - [x] Adicionada proteção contra processamento duplicado do mesmo erro/watchdog.
 - [x] O carregamento aparece como indicador discreto sobre o `PlayerView`; erro oferece OK para tentar novamente e BACK para sair.
 - [ ] Validar reprodução real no TV Box; não há ADB/emulador disponível neste ambiente.
+
+## Rodada 20 (parser M3U e transporte de cabeçalhos IPTV)
+- [x] Parser M3U separa URL efetiva, URL original e cabeçalhos conhecidos de pipe, EXTVLCOPT e EXTHTTP.
+- [x] URLs longas não são truncadas em 4096 caracteres; há limite de segurança de 1 MiB com erro explícito.
+- [x] Media3 usa DataSource por canal, levando User-Agent, Referer, Cookie e demais cabeçalhos aos segmentos HLS sem vazamento entre canais.
+- [x] Xtream preserva a extensão informada pelo servidor e usa m3u8 apenas quando não há formato disponível.
+- [x] Timeouts ajustados para redes IPTV: conexão 15 s, leitura 30 s e watchdog de progresso 45 s.
+- [x] Criados testes unitários para parser, cabeçalhos, URLs longas e geração de URL Xtream.
+- [ ] Validar reprodução real, primeiro frame, áudio, troca de canais e respostas HTTP em TV Box; não há dispositivo nem credenciais reais neste ambiente.

@@ -12,6 +12,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Locale;
 
 /**
@@ -104,8 +106,19 @@ final class LiveCache {
             List<XtreamApi.Item> items = new ArrayList<>(ia.length());
             for (int i = 0; i < ia.length() && items.size() < Catalog.MAX_LIVE; i++) {
                 JSONArray o = ia.getJSONArray(i);
+                Map<String, String> headers = new LinkedHashMap<>();
+                if (o.length() > 6 && o.opt(6) instanceof org.json.JSONObject) {
+                    org.json.JSONObject h = o.optJSONObject(6);
+                    java.util.Iterator<String> names = h.keys();
+                    while (names.hasNext()) {
+                        String name = names.next();
+                        headers.put(name, h.optString(name, ""));
+                    }
+                }
                 items.add(new XtreamApi.Item(XtreamApi.Kind.LIVE, o.optString(0), o.optString(1),
-                        o.optString(2), o.optString(3), o.optString(4), "", o.optString(5)));
+                        o.optString(2), o.optString(3), o.optString(4),
+                        o.length() > 8 ? o.optString(8) : "", o.optString(5),
+                        o.length() > 7 ? o.optString(7) : o.optString(5), headers));
             }
             if (items.isEmpty()) {
                 return null;
@@ -141,6 +154,13 @@ final class LiveCache {
                 o.put(it.categoryId);
                 o.put(it.epgId);
                 o.put(it.url);
+                org.json.JSONObject h = new org.json.JSONObject();
+                for (Map.Entry<String, String> e : it.headers.entrySet()) {
+                    h.put(e.getKey(), e.getValue());
+                }
+                o.put(h);
+                o.put(it.originalUrl);
+                o.put(it.ext);
                 ia.put(o);
             }
             org.json.JSONObject root = new org.json.JSONObject();

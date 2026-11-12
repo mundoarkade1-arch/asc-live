@@ -8,9 +8,14 @@ import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.net.URLDecoder;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.json.JSONObject;
 
 /**
  * Lê uma lista M3U e separa só os canais AO VIVO (ASC Live: filmes e séries são ignorados).
@@ -28,7 +33,7 @@ public final class M3uApi {
     /** Recebe cada item da lista. Devolve false para parar a leitura. */
     private interface Visitor {
         boolean entry(String url, String group, String name, String icon, String tvgId,
-                      int counter);
+                      int counter, String originalUrl, Map<String, String> headers);
     }
 
     /** Uma tarefa que lê a lista já aberta. */
@@ -40,7 +45,8 @@ public final class M3uApi {
     private static final int MAX_REDIRECTS = 5;
     private static final long MAX_BYTES = 200L * 1024L * 1024L;
     private static final long MAX_SECONDS = 60L;
-    private static final int MAX_LINE = 4096;
+    /** Limite de seguranca; linhas normais nao sao truncadas silenciosamente. */
+    private static final int MAX_LINE = 1024 * 1024;
     private static final int MAX_NAME = 200;
     private static final String USER_AGENT = "ASC-Cine/1.0 (Android)";
 
@@ -91,7 +97,8 @@ public final class M3uApi {
         dLive = 0;
         dFirst = "";
         try {
-            readList(m3uUrl, reader -> walk(reader, (url, grp, name, icon, tvgId, counter) -> {
+            readList(m3uUrl, reader -> walk(reader, (url, grp, name, icon, tvgId, counter,
+                                                    originalUrl, headers) -> {
                 if (!isLive(url, grp, name)) {
                     return true;
                 }
@@ -102,7 +109,8 @@ public final class M3uApi {
                 found[0]++;
                 dLive = found[0];
                 return listener.onItem(new XtreamApi.Item(XtreamApi.Kind.LIVE,
-                        String.valueOf(counter), cut(name), icon, grp, tvgId, "", url));
+                        String.valueOf(counter), cut(name), icon, grp, tvgId, "", url,
+                        originalUrl, headers));
             }));
         } catch (IOException e) {
             if (found[0] == 0) {
@@ -162,6 +170,7 @@ public final class M3uApi {
         String logo = "";
         String group = "";
         String tvgId = "";
+        Map<String, String> channelHeaders = new LinkedHashMap<>();
         int counter = 0;
         int count = 0;
 
@@ -188,6 +197,7 @@ public final class M3uApi {
                 logo = "";
                 group = "";
                 tvgId = "";
+                channelHeaders = new LinkedHashMap<>();
                 Matcher m = ATTR.matcher(head);
                 while (m.find()) {
                     String key = m.group(1).toLowerCase(Locale.ROOT);
@@ -209,18 +219,32 @@ public final class M3uApi {
                 have = true;
                 continue;
             }
+            if (line.regionMatches(true, 0, "#EXTVLCOPT:", 0, 11)) {
+                if (have) {
+                    parseHeaderOption(line.substring(11), channelHeaders);
+                }
+                continue;
+            }
+            if (line.regionMatches(true, 0, "#EXTHTTP:", 0, 9)) {
+                if (have) {
+                    parseHttpMetadata(line.substring(9), channelHeaders);
+                }
+                continue;
+            }
             if (line.charAt(0) == '#' || !have) {
                 continue;
             }
             have = false;
-            if (!isHttp(line) || name.isEmpty()) {
+            StreamInfo stream = parseStreamLine(line, channelHeaders);
+            if (!isHttp(stream.effectiveUrl) || name.isEmpty()) {
                 continue;
             }
             counter++;
             dUrls++;
 
             String icon = isHttp(logo) ? logo : "";
-            if (!visitor.entry(line, group, name, icon, tvgId, counter)) {
+            if (!visitor.entry(stream.effectiveUrl, group, name, icon, tvgId, counter,
+                    stream.originalUrl, stream.headers)) {
                 return;
             }
         }
@@ -271,6 +295,83 @@ public final class M3uApi {
                 || s.regionMatches(true, 0, "https://", 0, 8));
     }
 
+    static final class StreamInfo {
+        final String originalUrl;
+        final String effectiveUrl;
+        final Map<String, String> headers;
+
+        StreamInfo(String originalUrl, String effectiveUrl, Map<String, String> headers) {
+            this.originalUrl = originalUrl;
+            this.effectiveUrl = effectiveUrl;
+            this.headers = headers;
+        }
+    }
+
+    /** Separa URL|opcoes sem transformar opcoes desconhecidas em cabecalhos. */
+    static StreamInfo parseStreamLine(String raw, Map<String, String> inherited) {
+        String original = raw == null ? "" : raw.trim();
+        int pipe = original.indexOf('|');
+        String url = pipe < 0 ? original : original.substring(0, pipe).trim();
+        Map<String, String> headers = new LinkedHashMap<>();
+        if (inherited != null) headers.putAll(inherited);
+        if (pipe >= 0 && pipe + 1 < original.length()) {
+            String options = original.substring(pipe + 1);
+            for (String option : options.split("&")) {
+                parseHeaderOption(option, headers);
+            }
+        }
+        return new StreamInfo(original, url, headers);
+    }
+
+    static void parseHeaderOption(String option, Map<String, String> headers) {
+        if (option == null) return;
+        int eq = option.indexOf('=');
+        if (eq <= 0) return;
+        String name = canonicalHeader(option.substring(0, eq));
+        if (name == null) return;
+        String value = decodeHeaderValue(option.substring(eq + 1).trim());
+        if (!value.isEmpty()) headers.put(name, value);
+    }
+
+    static void parseHttpMetadata(String raw, Map<String, String> headers) {
+        String value = raw == null ? "" : raw.trim();
+        try {
+            JSONObject object = new JSONObject(value);
+            java.util.Iterator<String> names = object.keys();
+            while (names.hasNext()) {
+                String rawName = names.next();
+                String name = canonicalHeader(rawName);
+                if (name != null) {
+                    String headerValue = object.optString(rawName, "");
+                    if (!headerValue.isEmpty()) headers.put(name, headerValue);
+                }
+            }
+            return;
+        } catch (Exception ignored) {
+            // Algumas listas usam a mesma sintaxe chave=valor do EXTVLCOPT.
+        }
+        for (String option : value.split("&")) parseHeaderOption(option, headers);
+    }
+
+    private static String canonicalHeader(String raw) {
+        String key = raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
+        if ("user-agent".equals(key) || "http-user-agent".equals(key)) return "User-Agent";
+        if ("referer".equals(key) || "referrer".equals(key)
+                || "http-referer".equals(key) || "http-referrer".equals(key)) return "Referer";
+        if ("cookie".equals(key) || "http-cookie".equals(key)) return "Cookie";
+        if ("origin".equals(key) || "http-origin".equals(key)) return "Origin";
+        if ("accept".equals(key) || "http-accept".equals(key)) return "Accept";
+        return null;
+    }
+
+    private static String decodeHeaderValue(String value) {
+        try {
+            return URLDecoder.decode(value, "UTF-8");
+        } catch (Exception ignored) {
+            return value;
+        }
+    }
+
     private static String cut(String s) {
         return s.length() > MAX_NAME ? s.substring(0, MAX_NAME) : s;
     }
@@ -309,6 +410,7 @@ public final class M3uApi {
         private final char[] buf = new char[8192];
         private int len = 0;
         private int pos = 0;
+        private boolean tooLong;
 
         Lines(Reader reader) {
             this.reader = reader;
@@ -317,6 +419,7 @@ public final class M3uApi {
         /** Põe a próxima linha em sb. Devolve false quando a lista acabou. */
         boolean next(StringBuilder sb) throws IOException {
             sb.setLength(0);
+            tooLong = false;
             boolean any = false;
             while (true) {
                 if (pos >= len) {
@@ -324,6 +427,10 @@ public final class M3uApi {
                     pos = 0;
                     if (len < 0) {
                         len = 0;
+                        if (tooLong) {
+                            throw new IOException("lista: uma linha da playlist excede "
+                                    + MAX_LINE + " caracteres.");
+                        }
                         return any;
                     }
                     if (len == 0) {
@@ -334,10 +441,16 @@ public final class M3uApi {
                     char c = buf[pos++];
                     any = true;
                     if (c == '\n' || c == '\r') {
+                        if (tooLong) {
+                            throw new IOException("lista: uma linha da playlist excede "
+                                    + MAX_LINE + " caracteres.");
+                        }
                         return true;
                     }
                     if (sb.length() < MAX_LINE) {
                         sb.append(c);
+                    } else {
+                        tooLong = true;
                     }
                 }
             }

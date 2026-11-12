@@ -16,8 +16,11 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -63,14 +66,26 @@ public final class XtreamApi {
          * Contém usuário e senha em muitas listas: nunca mostrar nem registrar em log.
          */
         public final String url;
+        /** Linha original da playlist, antes de separar a sintaxe URL|cabecalhos. */
+        public final String originalUrl;
+        /** URL efetiva usada pelo Media3, sem metadados de cabecalho. */
+        public final String effectiveUrl;
+        /** Cabecalhos especificos desta transmissao. Nunca sao registrados em log. */
+        public final Map<String, String> headers;
 
         Item(Kind kind, String id, String name, String icon, String categoryId,
              String epgId, String ext) {
-            this(kind, id, name, icon, categoryId, epgId, ext, "");
+            this(kind, id, name, icon, categoryId, epgId, ext, "", "", null);
         }
 
         Item(Kind kind, String id, String name, String icon, String categoryId,
              String epgId, String ext, String url) {
+            this(kind, id, name, icon, categoryId, epgId, ext, url, url, null);
+        }
+
+        Item(Kind kind, String id, String name, String icon, String categoryId,
+             String epgId, String ext, String url, String originalUrl,
+             Map<String, String> headers) {
             this.kind = kind;
             this.id = id;
             this.name = name;
@@ -79,6 +94,11 @@ public final class XtreamApi {
             this.epgId = epgId;
             this.ext = ext;
             this.url = url == null ? "" : url;
+            this.originalUrl = originalUrl == null ? this.url : originalUrl;
+            this.effectiveUrl = this.url;
+            this.headers = headers == null || headers.isEmpty()
+                    ? Collections.<String, String>emptyMap()
+                    : Collections.unmodifiableMap(new LinkedHashMap<>(headers));
         }
     }
 
@@ -393,7 +413,12 @@ public final class XtreamApi {
         String base = server == null ? "" : server.replaceAll("/+$", "");
         String u = Uri.encode(user) + "/" + Uri.encode(pass) + "/";
         // .ts é o formato ao vivo mais compatível entre servidores Xtream.
-        return base + "/live/" + u + item.id + ".m3u8";
+        String extension = item.ext == null ? "" : item.ext.trim().toLowerCase(Locale.ROOT);
+        if (extension.startsWith(".")) extension = extension.substring(1);
+        if (!"ts".equals(extension) && !"m3u8".equals(extension)) {
+            extension = "m3u8";
+        }
+        return base + "/live/" + u + item.id + "." + extension;
     }
 
     // ---------- Leitura de um canal ----------
@@ -404,6 +429,7 @@ public final class XtreamApi {
         String icon = "";
         String cat = "";
         String epg = "";
+        String ext = "";
         r.beginObject();
         while (r.hasNext()) {
             String key = r.nextName();
@@ -423,6 +449,10 @@ public final class XtreamApi {
                 case "epg_channel_id":
                     epg = readText(r);
                     break;
+                case "container_extension":
+                case "container":
+                    ext = readText(r);
+                    break;
                 default:
                     r.skipValue();
                     break;
@@ -437,7 +467,7 @@ public final class XtreamApi {
         if (!lowerIcon.startsWith("http://") && !lowerIcon.startsWith("https://")) {
             icon = "";
         }
-        return new Item(Kind.LIVE, id, cut(name), icon, cat, epg.trim(), "");
+        return new Item(Kind.LIVE, id, cut(name), icon, cat, epg.trim(), ext);
     }
 
     /** Lê um programa do guia. Devolve null se faltar título ou horário válido. */

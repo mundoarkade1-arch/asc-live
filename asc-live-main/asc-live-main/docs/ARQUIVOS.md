@@ -40,6 +40,9 @@
 | SearchScreen, SearchKeyboard | buscar canal |
 | GroupGridScreen, ChannelAdapter, ChannelCard, TvGrid | base e peças da grade de canais |
 | SettingsScreen | Ajustes (limpar cache, segurança, atualização) |
+| M3uApi | Parser M3U: URLs, metadados e cabeçalhos por canal |
+| LivePlayer | Reprodução Media3 com DataSource e cabeçalhos por transmissão |
+| XtreamApi, LiveCache | Formato de reprodução e persistência de metadados IPTV |
 
 ## Futebol (dados)
 | Arquivo | Para que serve |

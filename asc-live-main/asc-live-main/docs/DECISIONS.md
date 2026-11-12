@@ -40,3 +40,6 @@
 19. **Programação (EPG) igual ao TV Box:** "Agora / A seguir" nos cartões (só dos canais visíveis, 1 min de
     cache) e janela completa na tecla de menu. OK longo continua favoritando (o TV Box usa OK longo para a
     programação; aqui ele é dos favoritos). Player: Baixo = próximo canal, Cima = anterior (como no TV Box).
+20. **Cabeçalhos IPTV por canal:** o parser preserva URL efetiva, URL original e apenas cabeçalhos HTTP
+    reconhecidos. O player cria um `DefaultHttpDataSource.Factory` por transmissão para que os cabeçalhos
+    também sejam aplicados às requisições HLS e não vazem para outro canal.
