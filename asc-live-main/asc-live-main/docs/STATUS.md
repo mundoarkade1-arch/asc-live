@@ -92,3 +92,10 @@ Feito (compilado só por sintaxe; o build do Actions e o teste no TX9 são a pro
 - [x] Emissoras e canais aparecem como ícones horizontais compactos.
 - [x] Clique no card abre o primeiro canal transmissor; clique no ícone abre aquele canal específico.
 - [ ] Validar o fluxo completo no TV Box.
+## Rodada 17 (identidade ASC Live e tela inicial esportiva)
+- [x] Paleta migrada para preto, superfícies escuras e ciano `#00D9FF`.
+- [x] Criado cabeçalho com marca, busca, relógio, data, conectividade e ajustes.
+- [x] Navegação lateral compacta adicionada e integrada às telas existentes.
+- [x] Tela inicial refeita com faixa horizontal de jogos, foco remoto e painel de destaque.
+- [x] Canais relacionados aparecem no painel da partida e abrem o player existente diretamente.
+- [ ] Validar visual e foco no TV Box.

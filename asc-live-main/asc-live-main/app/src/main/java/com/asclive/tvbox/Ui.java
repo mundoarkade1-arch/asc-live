@@ -22,9 +22,9 @@ final class Ui {
     static final int LIME = 2;
 
     /** Alturas e larguras fixas do quadro principal (em dp). */
-    static final int TOP_BAR_DP = 76;
+    static final int TOP_BAR_DP = 68;
     static final int HINT_BAR_DP = 0;
-    static final int SIDEBAR_DP = 0;
+    static final int SIDEBAR_DP = 176;
 
     private static Typeface bold;
     private static Typeface medium;

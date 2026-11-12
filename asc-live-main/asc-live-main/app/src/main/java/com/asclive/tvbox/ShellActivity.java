@@ -8,10 +8,11 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 /** Casca das telas com navegaÃ§Ã£o superior; nÃ£o hÃ¡ menu lateral nem rodapÃ© de dicas. */
-public class ShellActivity extends Activity {
+public class ShellActivity extends Activity implements Sidebar.Listener {
 
     private FrameLayout content;
-    private TopBar topBar;
+    private MainHeader header;
+    private Sidebar sidebar;
     private Screen current;
     private int currentId = -1;
 
@@ -29,18 +30,23 @@ public class ShellActivity extends Activity {
         }
         FrameLayout root = new FrameLayout(this);
         root.setBackground(Ui.appBackground(this));
-        topBar = new TopBar(this, this::onSelect);
-        root.addView(topBar, new FrameLayout.LayoutParams(-1, Ui.dp(this, Ui.TOP_BAR_DP)));
+        header = new MainHeader(this, new MainHeader.Listener() {
+            @Override public void onSearch() { onSelect(Sidebar.SEARCH); }
+            @Override public void onSettings() { onSelect(Sidebar.SETTINGS); }
+        });
+        root.addView(header, new FrameLayout.LayoutParams(-1, Ui.dp(this, Ui.TOP_BAR_DP)));
+        sidebar = new Sidebar(this, this, "ASC Live", 0);
+        root.addView(sidebar);
         content = new FrameLayout(this);
         FrameLayout.LayoutParams clp = new FrameLayout.LayoutParams(-1, -1);
         clp.topMargin = Ui.dp(this, Ui.TOP_BAR_DP + 12);
-        clp.leftMargin = Ui.dp(this, 20);
+        clp.leftMargin = Ui.dp(this, Ui.SIDEBAR_DP + 30);
         clp.rightMargin = Ui.dp(this, 20);
         clp.bottomMargin = Ui.dp(this, 14);
         root.addView(content, clp);
         setContentView(root);
         showScreen(Sidebar.FOOTBALL, true);
-        topBar.requestInitialFocus();
+        sidebar.focusActive();
         DeviceLink.syncInBackground(this);
         UpdateUi.checkOnce(this);
         showWelcomeOnce();
@@ -68,6 +74,10 @@ public class ShellActivity extends Activity {
         content.removeAllViews();
         Screen s;
         switch (id) {
+            case Sidebar.HOME:
+            case Sidebar.FOOTBALL:
+                s = new FootballScreen(this);
+                break;
             case Sidebar.FAVORITES:
                 s = new FavoritesScreen(this);
                 break;
@@ -81,7 +91,7 @@ public class ShellActivity extends Activity {
                 s = new SettingsScreen(this);
                 break;
             default:
-                id = Sidebar.FOOTBALL;
+                id = Sidebar.HOME;
                 s = new FootballScreen(this);
                 break;
         }
@@ -92,9 +102,19 @@ public class ShellActivity extends Activity {
     }
 
     void focusReady(Screen s) {
-        if (s == current && topBar.hasFocus()) {
+        if (s == current && sidebar != null && sidebar.hasFocus()) {
             s.focusContent();
         }
+    }
+
+    @Override
+    public boolean onRight() {
+        return current != null && current.focusContent();
+    }
+
+    @Override
+    public void onTouched() {
+        if (current != null) current.onPause();
     }
 
     private void onSelect(int id) {
@@ -106,6 +126,7 @@ public class ShellActivity extends Activity {
             showScreen(currentId < 0 ? Sidebar.FOOTBALL : currentId, true);
             return;
         }
+        sidebar.setActive(id);
         showScreen(id, false);
         if (current != null) {
             current.focusContent();
@@ -118,14 +139,18 @@ public class ShellActivity extends Activity {
                 && event.getRepeatCount() == 0 && current.handleMenu()) {
             return true;
         }
-        if (topBar.hasFocus() && keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+        if (sidebar != null && sidebar.hasFocus() && keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
             return current != null && current.focusContent();
         }
-        if (!topBar.hasFocus() && keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+        if (sidebar != null && !sidebar.hasFocus() && keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+            sidebar.focusNearest(getCurrentFocus() == null ? 0 : getCurrentFocus().getTop());
+            return true;
+        }
+        if (sidebar != null && !sidebar.hasFocus() && keyCode == KeyEvent.KEYCODE_DPAD_UP) {
             View f = getCurrentFocus();
             View n = f == null ? null : f.focusSearch(View.FOCUS_UP);
             if (n == null || n == f || !isInContent(n)) {
-                topBar.requestFocus();
+                sidebar.focusNearest(f == null ? 0 : f.getTop());
                 return true;
             }
         }
@@ -150,6 +175,7 @@ public class ShellActivity extends Activity {
             return;
         }
         if (currentId != Sidebar.FOOTBALL) {
+            sidebar.setActive(Sidebar.FOOTBALL);
             showScreen(Sidebar.FOOTBALL, false);
             return;
         }
@@ -165,9 +191,7 @@ public class ShellActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (topBar != null) {
-            topBar.start();
-        }
+        if (header != null) header.startClock();
         if (current != null) {
             current.onResume();
         }
@@ -175,9 +199,7 @@ public class ShellActivity extends Activity {
 
     @Override
     protected void onPause() {
-        if (topBar != null) {
-            topBar.stop();
-        }
+        if (header != null) header.stopClock();
         if (current != null) {
             current.onPause();
         }

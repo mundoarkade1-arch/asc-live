@@ -25,6 +25,7 @@ final class Sidebar extends LinearLayout {
     static final int LIVE = 4;
     static final int REFRESH = 7;
     static final int SETTINGS = 8;
+    static final int HOME = 9;
 
     interface Listener {
         void onSelect(int id);
@@ -75,8 +76,9 @@ final class Sidebar extends LinearLayout {
 
         addProfile(c, profileName, profileAvatar);
         addGap(c, 14);
-        addRow(c, FOOTBALL, R.drawable.ic_play, "Início");
+        addRow(c, HOME, R.drawable.ic_play, "Início");
         addRow(c, LIVE, R.drawable.ic_tv, "Canais");
+        addRow(c, FOOTBALL, R.drawable.ic_play, "Esportes");
         addRow(c, FAVORITES, R.drawable.ic_bookmark, "Favoritos");
         addRow(c, SEARCH, R.drawable.ic_search, "Buscar");
         View spacer = new View(c);
