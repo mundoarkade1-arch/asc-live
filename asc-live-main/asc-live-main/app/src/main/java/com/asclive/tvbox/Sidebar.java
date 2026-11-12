@@ -211,7 +211,8 @@ final class Sidebar extends LinearLayout {
             if (r.icon != null) {
                 r.icon.setColorFilter(on ? C.LIME : C.TEXT);
             }
-            r.label.setTextColor(on ? C.LIME : C.TEXT);
+            r.label.setTextColor(C.TEXT);
+            r.label.setTypeface(on ? Ui.bold(getContext()) : android.graphics.Typeface.DEFAULT);
         }
     }
 

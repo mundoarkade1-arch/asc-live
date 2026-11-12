@@ -66,7 +66,7 @@ final class UpdateUi {
         int p = Ui.dp(a, 28);
         box.setPadding(p, p, p, p);
         box.addView(Ui.title(a, "Baixando atualização", 24, C.TEXT));
-        final TextView pct = Ui.text(a, "Aguarde...", 18, C.LIME);
+        final TextView pct = Ui.text(a, "Aguarde...", 18, C.TEXT);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
         lp.topMargin = Ui.dp(a, 12);
         box.addView(pct, lp);

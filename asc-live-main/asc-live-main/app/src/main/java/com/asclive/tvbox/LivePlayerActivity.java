@@ -17,7 +17,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.ProgressBar;
 
 import androidx.media3.ui.AspectRatioFrameLayout;
 import androidx.media3.ui.PlayerView;
@@ -28,8 +27,8 @@ import androidx.media3.ui.PlayerView;
  * Controle remoto:
  * - Baixo / Cima: próximo canal / canal anterior (da lista de onde a pessoa veio), como no
  *   ASC TV Box. Cada canal tem a sua resolução no nome (SD, HD, FHD...).
- * - OK: lista rápida de canais. Números: digita o canal. Voltar: sai (ou fecha a lista).
- * - Tecla das três listras: programação do canal (login por servidor).
+ * - OK: programação do canal (agora e a seguir). Números: digita o canal. Voltar: sai (ou fecha a lista).
+ * - Tecla das três listras: lista rápida de canais.
  * O PlayerView aparece imediatamente, sem uma tela intermediária opaca.
  */
 public class LivePlayerActivity extends Activity implements LivePlayer.Listener {
@@ -42,7 +41,7 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
     private LivePlayer lp;
     private PlayerView pv;
     private FrameLayout root;
-    private ProgressBar loading;
+    private LoadingSpinner loading;
     private TextView playbackState;
 
     private LinearLayout infoBar;
@@ -147,8 +146,7 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
         pv.setShutterBackgroundColor(Color.BLACK);
         root.addView(pv, new FrameLayout.LayoutParams(-1, -1));
 
-        loading = new ProgressBar(this);
-        loading.setIndeterminate(true);
+        loading = new LoadingSpinner(this);
         FrameLayout.LayoutParams loadingLp = new FrameLayout.LayoutParams(
                 Ui.dp(this, 48), Ui.dp(this, 48), Gravity.CENTER);
         root.addView(loading, loadingLp);
@@ -170,13 +168,13 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
         infoBar.setGravity(Gravity.CENTER_VERTICAL);
         infoBar.setBackgroundColor(C.SHADE);
         infoBar.setPadding(Ui.dp(this, 40), Ui.dp(this, 18), Ui.dp(this, 40), Ui.dp(this, 18));
-        infoNumber = Ui.title(this, "", 30, C.LIME);
+        infoNumber = Ui.title(this, "", 30, C.TEXT);
         infoBar.addView(infoNumber);
         LinearLayout nameBox = new LinearLayout(this);
         nameBox.setOrientation(LinearLayout.VERTICAL);
         infoName = Ui.title(this, "", 28, C.TEXT);
         nameBox.addView(infoName);
-        infoNow = Ui.text(this, "", 18, C.LIME);
+        infoNow = Ui.text(this, "", 18, C.TEXT);
         infoNow.setSingleLine(true);
         infoNow.setEllipsize(android.text.TextUtils.TruncateAt.END);
         LinearLayout.LayoutParams nowLp = new LinearLayout.LayoutParams(-1, -2);
@@ -193,7 +191,7 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
         root.addView(infoBar, iblp);
 
         // Número sendo digitado (canto de cima, à direita).
-        numberView = Ui.title(this, "", 48, C.LIME);
+        numberView = Ui.title(this, "", 48, C.TEXT);
         numberView.setBackground(Ui.shape(C.SHADE, Ui.dp(this, 14), 0, 0));
         numberView.setPadding(Ui.dp(this, 22), Ui.dp(this, 8), Ui.dp(this, 22), Ui.dp(this, 8));
         numberView.setVisibility(View.GONE);
@@ -248,7 +246,9 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
             t.setText((position + 1) + "   " + g.nome);
             t.setSingleLine(true);
             t.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            t.setTextColor(position == LiveSession.index ? C.LIME : C.TEXT);
+            boolean cur = position == LiveSession.index;
+            t.setTextColor(C.TEXT);
+            t.setTypeface(cur ? Ui.bold(LivePlayerActivity.this) : android.graphics.Typeface.DEFAULT);
             t.setPadding(Ui.dp(LivePlayerActivity.this, 14), Ui.dp(LivePlayerActivity.this, 12),
                     Ui.dp(LivePlayerActivity.this, 14), Ui.dp(LivePlayerActivity.this, 12));
             return t;
@@ -353,7 +353,7 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
         });
     }
 
-    /** Tecla das três listras: programação do canal. Sem guia, só mostra a faixa de informação. */
+    /** OK em tela cheia: programação do canal (agora e a seguir), em janela de vidro. */
     private void openSchedule() {
         ChannelGroup g = LiveSession.current();
         if (g == null) {
@@ -361,7 +361,8 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
         }
         CredentialStore.Credentials c = Catalog.creds(this);
         if (c == null || Catalog.isM3u(c)) {
-            showInfo(g, lp.currentVariant());
+            // Lista M3U não tem guia: abre a janela avisando que não há programação.
+            EpgDialog.show(this, null, null, null, null, g.nome);
             return;
         }
         EpgDialog.show(this, c.server, c.user, c.pass, g.item().id, g.nome);
@@ -507,13 +508,13 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
                     if (typed.length() > 0) {
                         commitTyped();
                     } else {
-                        openPanel();
+                        openSchedule(); // OK em tela cheia: o que passa agora e o que vem depois
                     }
                 }
                 return true;
             case KeyEvent.KEYCODE_MENU:
                 if (first) {
-                    openSchedule();
+                    openPanel(); // tecla das três listras: lista de canais
                 }
                 return true;
             case KeyEvent.KEYCODE_INFO:

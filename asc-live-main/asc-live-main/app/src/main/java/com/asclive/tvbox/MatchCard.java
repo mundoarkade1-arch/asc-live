@@ -53,7 +53,7 @@ final class MatchCard extends LinearLayout {
         liveBox.setOrientation(HORIZONTAL);
         liveBox.setGravity(Gravity.CENTER_VERTICAL);
         liveBox.addView(Ui.limeTag(c, "AO VIVO"));
-        liveMinute = Ui.text(c, "", 16, C.LIME);
+        liveMinute = Ui.text(c, "", 16, C.TEXT);
         LayoutParams mlp = new LayoutParams(-2, -2);
         mlp.leftMargin = Ui.dp(c, 8);
         liveBox.addView(liveMinute, mlp);
@@ -106,7 +106,7 @@ final class MatchCard extends LinearLayout {
             liveBox.setVisibility(View.VISIBLE);
             liveMinute.setText(m.statusText);
             score.setText(m.placar.isEmpty() ? "0 x 0" : m.placar);
-            score.setTextColor(C.LIME);
+            score.setTextColor(C.TEXT);
         } else if (m.status == Match.FINISHED) {
             liveBox.setVisibility(View.GONE);
             time.setVisibility(View.VISIBLE);

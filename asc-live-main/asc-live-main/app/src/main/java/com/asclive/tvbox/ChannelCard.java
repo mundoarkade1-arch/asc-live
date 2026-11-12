@@ -65,7 +65,7 @@ final class ChannelCard extends FrameLayout {
         poster.setClipToOutline(true);
         addView(poster, new LayoutParams(pw, ph));
 
-        initial = Ui.title(c, "", 44, C.LIME);
+        initial = Ui.title(c, "", 44, C.TEXT);
         initial.setGravity(Gravity.CENTER);
         poster.addView(initial, new LayoutParams(-1, -1));
 
@@ -100,7 +100,7 @@ final class ChannelCard extends FrameLayout {
         tl.topMargin = ph + Ui.dp(c, 12);
         addView(title, tl);
 
-        now = Ui.text(c, "", 12, C.LIME);
+        now = Ui.text(c, "", 12, C.TEXT);
         now.setSingleLine(true);
         now.setEllipsize(TextUtils.TruncateAt.END);
         LayoutParams nl = new LayoutParams(pw, lineH);

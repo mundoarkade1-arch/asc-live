@@ -108,7 +108,7 @@ final class SettingsScreen extends Screen {
         TextView l = Ui.text(act, label, 19, C.TEXT);
         r.addView(l, new LinearLayout.LayoutParams(0, -2, 1f));
         if (!value.isEmpty()) {
-            r.addView(Ui.text(act, value, 18, C.LIME));
+            r.addView(Ui.text(act, value, 18, C.TEXT));
         }
         r.setOnClickListener(v -> action.run());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
@@ -125,7 +125,7 @@ final class SettingsScreen extends Screen {
         b.setPadding(Ui.dp(act, 20), Ui.dp(act, 16), Ui.dp(act, 20), Ui.dp(act, 16));
         b.setBackground(Ui.shape(C.GLASS, Ui.dp(act, 14), C.LIME_40, Ui.dp(act, 1)));
         b.addView(Ui.text(act, "Código do aparelho", 16, C.TEXT2));
-        TextView code = Ui.title(act, "...", 30, C.LIME);
+        TextView code = Ui.title(act, "...", 30, C.TEXT);
         LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(-2, -2);
         clp.topMargin = Ui.dp(act, 6);
         b.addView(code, clp);

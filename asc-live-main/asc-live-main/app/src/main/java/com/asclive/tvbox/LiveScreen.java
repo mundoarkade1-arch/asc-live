@@ -625,7 +625,7 @@ final class LiveScreen extends Screen {
 
         void bind(String title, int n, boolean on) {
             name.setText(title);
-            name.setTextColor(on ? C.LIME : C.TEXT);
+            name.setTextColor(C.TEXT);
             name.setTypeface(on ? Ui.bold(getContext()) : android.graphics.Typeface.DEFAULT);
             count.setText(String.valueOf(n));
             setBackground(on ? Ui.shape(C.GLASS_HI, Ui.dp(getContext(), 12), 0, 0) : null);

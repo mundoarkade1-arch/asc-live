@@ -5,6 +5,12 @@ O código inteiro foi compilado no ambiente do agente contra um `android.jar` re
 classes de teste no lugar do `androidx.media3` e `androidx.core`. O **build do GitHub Actions** e o
 **teste no aparelho (TX9)** ainda são a prova final: ninguém abriu o app num TV Box ainda.
 
+## Rodada 17 (ajustes do player pedidos pelo dono)
+- [x] Bolinha de carregamento agora GIRA (`LoadingSpinner`, relógio próprio: gira mesmo com animações do sistema desligadas).
+- [x] OK em tela cheia abre a programação (agora e a seguir) em janela de vidro, letra maior (`EpgDialog`). A lista rápida de canais passou para a tecla das três listras.
+- [x] Azul do app (`C.LIME`) só em destaque (contorno, barra, ícone, etiqueta com letra escura). Nenhum texto fica azul.
+- [ ] Validar no TV Box (TX9).
+
 ## Rodada 11 (ajuste pedido pelo dono, depois de testar no aparelho)
 O dono achou o app "estranho" e pediu: **mesma aparência**, mas o **canal funcionando como no ASC TV Box**.
 Feito (compilado só por sintaxe; o build do Actions e o teste no TX9 são a prova final):

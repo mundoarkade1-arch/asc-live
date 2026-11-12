@@ -82,7 +82,7 @@ final class FootballScreen extends Screen {
         highlight.setGravity(Gravity.CENTER);
         highlight.setPadding(Ui.dp(act, 22), Ui.dp(act, 14), Ui.dp(act, 22), Ui.dp(act, 14));
         highlight.setBackground(Ui.glass(act, 18));
-        TextView cap = Ui.text(act, "JOGO EM DESTAQUE", 13, C.LIME);
+        TextView cap = Ui.text(act, "JOGO EM DESTAQUE", 13, C.TEXT);
         cap.setTypeface(Ui.bold(act), Typeface.BOLD);
         highlight.addView(cap);
         LinearLayout shields = new LinearLayout(act);
@@ -219,7 +219,7 @@ final class FootballScreen extends Screen {
         names.setEllipsize(TextUtils.TruncateAt.END);
         card.addView(names, new LinearLayout.LayoutParams(-1, Ui.dp(act, 42)));
         TextView status = Ui.text(act, statusText(match), 14,
-                match.status == Match.LIVE ? C.LIME : C.TEXT2);
+                match.status == Match.LIVE ? C.TEXT : C.TEXT2);
         status.setGravity(Gravity.CENTER);
         card.addView(status, new LinearLayout.LayoutParams(-1, Ui.dp(act, 26)));
         if (first == null) first = card;
@@ -241,7 +241,7 @@ final class FootballScreen extends Screen {
         ImageLoader.load(detailAway, match.escudoFora, 180);
         detailTeams.setText(match.casa + "  x  " + match.fora);
         detailStatus.setText(statusText(match));
-        detailStatus.setTextColor(match.status == Match.LIVE ? C.LIME : C.TEXT2);
+        detailStatus.setTextColor(match.status == Match.LIVE ? C.TEXT : C.TEXT2);
         detailTime.setText(new SimpleDateFormat("dd/MM  HH:mm", Locale.getDefault())
                 .format(new Date(match.horario)));
         renderChannels(match);
