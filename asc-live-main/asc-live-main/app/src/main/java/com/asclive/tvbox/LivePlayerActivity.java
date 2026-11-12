@@ -27,7 +27,7 @@ import androidx.media3.ui.PlayerView;
  * Controle remoto:
  * - Baixo / Cima: próximo canal / canal anterior (da lista de onde a pessoa veio), como no
  *   ASC TV Box. Cada canal tem a sua resolução no nome (SD, HD, FHD...).
- * - OK: programação do canal (agora e a seguir). Números: digita o canal. Voltar: sai (ou fecha a lista).
+ * - OK: a faixa de informação sobe (canal, agora e a seguir) e some sozinha. Números: digita o canal. Voltar: sai (ou fecha a lista).
  * - Tecla das três listras: lista rápida de canais.
  * O PlayerView aparece imediatamente, sem uma tela intermediária opaca.
  */
@@ -35,6 +35,7 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
 
     private static final long ZAP_DELAY_MS = 250L;
     private static final long INFO_MS = 3500L;
+    private static final long INFO_OK_MS = 6000L;
     private static final long NUMBER_MS = 1500L;
 
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -48,6 +49,7 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
     private TextView infoNumber;
     private TextView infoName;
     private TextView infoNow;
+    private TextView infoNext;
     private String infoId = "";
     private TextView infoQuality;
 
@@ -166,24 +168,37 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
         infoBar = new LinearLayout(this);
         infoBar.setOrientation(LinearLayout.HORIZONTAL);
         infoBar.setGravity(Gravity.CENTER_VERTICAL);
-        infoBar.setBackgroundColor(C.SHADE);
-        infoBar.setPadding(Ui.dp(this, 40), Ui.dp(this, 18), Ui.dp(this, 40), Ui.dp(this, 18));
-        infoNumber = Ui.title(this, "", 30, C.TEXT);
+        // Vidro: escuro e transparente, o canal continua aparecendo por trás.
+        infoBar.setBackgroundColor(0x88101010);
+        infoBar.setPadding(Ui.dp(this, 44), Ui.dp(this, 24), Ui.dp(this, 44), Ui.dp(this, 26));
+        infoNumber = Ui.title(this, "", 40, C.TEXT);
+        infoNumber.setShadowLayer(6f, 0f, 1f, 0xFF000000);
         infoBar.addView(infoNumber);
         LinearLayout nameBox = new LinearLayout(this);
         nameBox.setOrientation(LinearLayout.VERTICAL);
-        infoName = Ui.title(this, "", 28, C.TEXT);
+        infoName = Ui.title(this, "", 38, C.TEXT);
+        infoName.setShadowLayer(6f, 0f, 1f, 0xFF000000);
         nameBox.addView(infoName);
-        infoNow = Ui.text(this, "", 18, C.TEXT);
+        infoNow = Ui.text(this, "", 26, C.TEXT);
+        infoNow.setShadowLayer(6f, 0f, 1f, 0xFF000000);
         infoNow.setSingleLine(true);
         infoNow.setEllipsize(android.text.TextUtils.TruncateAt.END);
         LinearLayout.LayoutParams nowLp = new LinearLayout.LayoutParams(-1, -2);
-        nowLp.topMargin = Ui.dp(this, 4);
+        nowLp.topMargin = Ui.dp(this, 8);
         nameBox.addView(infoNow, nowLp);
+        infoNext = Ui.text(this, "", 24, 0xFFE6E6E6);
+        infoNext.setShadowLayer(6f, 0f, 1f, 0xFF000000);
+        infoNext.setSingleLine(true);
+        infoNext.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        infoNext.setVisibility(View.GONE);
+        LinearLayout.LayoutParams nextLp = new LinearLayout.LayoutParams(-1, -2);
+        nextLp.topMargin = Ui.dp(this, 4);
+        nameBox.addView(infoNext, nextLp);
         LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(0, -2, 1f);
         ilp.leftMargin = Ui.dp(this, 22);
         infoBar.addView(nameBox, ilp);
         infoQuality = Ui.limeTag(this, "");
+        infoQuality.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 18);
         infoBar.addView(infoQuality);
         infoBar.setVisibility(View.GONE);
         FrameLayout.LayoutParams iblp = new FrameLayout.LayoutParams(-1, -2);
@@ -326,6 +341,8 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
         }
         infoQuality.setText(q);
         infoQuality.setVisibility(q.isEmpty() ? View.GONE : View.VISIBLE);
+        infoBar.animate().cancel();
+        infoBar.setTranslationY(0f);
         infoBar.setVisibility(View.VISIBLE);
         main.removeCallbacks(hideInfo);
         main.postDelayed(hideInfo, INFO_MS);
@@ -337,6 +354,9 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
         final String id = g.item().id;
         infoId = id;
         infoNow.setText("");
+        infoNow.setTextColor(C.TEXT);
+        infoNext.setText("");
+        infoNext.setVisibility(View.GONE);
         final CredentialStore.Credentials c = Catalog.creds(this);
         if (c == null || Catalog.isM3u(c)) {
             return;
@@ -345,27 +365,26 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
             if (epg == null || !id.equals(infoId)) {
                 return;
             }
-            String t = "Agora: " + epg.title;
+            infoNow.setText("Agora: " + epg.title);
             if (epg.nextTitle != null && !epg.nextTitle.isEmpty()) {
-                t = t + "   \u2022   A seguir: " + epg.nextTitle;
+                infoNext.setText("A seguir: " + epg.nextTitle);
+                infoNext.setVisibility(View.VISIBLE);
             }
-            infoNow.setText(t);
         });
     }
 
-    /** OK em tela cheia: programação do canal (agora e a seguir), em janela de vidro. */
-    private void openSchedule() {
+    /** OK em tela cheia: a faixa de baixo sobe (canal, agora e a seguir), fica uns segundos e some. */
+    private void openInfo() {
         ChannelGroup g = LiveSession.current();
         if (g == null) {
             return;
         }
-        CredentialStore.Credentials c = Catalog.creds(this);
-        if (c == null || Catalog.isM3u(c)) {
-            // Lista M3U não tem guia: abre a janela avisando que não há programação.
-            EpgDialog.show(this, null, null, null, null, g.nome);
-            return;
-        }
-        EpgDialog.show(this, c.server, c.user, c.pass, g.item().id, g.nome);
+        showInfo(g, lp != null ? lp.currentVariant() : -1);
+        int h = infoBar.getHeight() > 0 ? infoBar.getHeight() : Ui.dp(this, 150);
+        infoBar.setTranslationY(h);
+        infoBar.animate().translationY(0f).setDuration(250L).start();
+        main.removeCallbacks(hideInfo);
+        main.postDelayed(hideInfo, INFO_OK_MS);
     }
 
     // ---------- Respostas do LivePlayer ----------
@@ -392,6 +411,7 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
         showPlaybackError();
         if (infoName == null || infoNow == null || infoBar == null) return;
         infoName.setText(g.nome);
+        infoNext.setVisibility(View.GONE);
         infoNow.setText("Canal indisponível. Use cima ou baixo para trocar.");
         infoNow.setTextColor(C.ERROR);
         infoBar.setVisibility(View.VISIBLE);
@@ -508,7 +528,7 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
                     if (typed.length() > 0) {
                         commitTyped();
                     } else {
-                        openSchedule(); // OK em tela cheia: o que passa agora e o que vem depois
+                        openInfo(); // OK em tela cheia: a faixa de informação sobe
                     }
                 }
                 return true;

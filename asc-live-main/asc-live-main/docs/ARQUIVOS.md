@@ -21,14 +21,14 @@
 | ChannelNames | nome do canal -> chave (`fullKey` com resolução), qualidade (SD/HD/FHD/UHD4K), H265 |
 | ChannelGroup | UM canal da lista (nome com resolução, logo, categoria); chave e qualidade calculadas sob demanda |
 | EpgCache | programação "agora / a seguir" dos canais (1 min, 80 canais, 2 pedidos por vez) |
-| EpgDialog | janela de vidro da programação do canal (OK em tela cheia): agora e a seguir |
+| EpgDialog | janela da programação do canal (não usada mais pelo player) |
 | LoadingSpinner | bolinha de carregamento que gira (relógio próprio, não depende das animações do sistema) |
 
 ## Player
 | Arquivo | Para que serve |
 |---|---|
 | LivePlayer | UM ExoPlayer reaproveitado; buffer de ao vivo; troca de versão e reconexão; pré-aquecer |
-| LivePlayerActivity | tela cheia: zapping, OK = programação, tecla de menu = lista rápida, número do canal |
+| LivePlayerActivity | tela cheia: zapping, OK = faixa de informação sobe, tecla de menu = lista rápida, número do canal |
 | LiveSession | lista de canais, posição e versão passadas ao player (em memória) |
 
 ## Telas

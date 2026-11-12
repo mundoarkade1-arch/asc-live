@@ -7,7 +7,7 @@ classes de teste no lugar do `androidx.media3` e `androidx.core`. O **build do G
 
 ## Rodada 17 (ajustes do player pedidos pelo dono)
 - [x] Bolinha de carregamento agora GIRA (`LoadingSpinner`, relógio próprio: gira mesmo com animações do sistema desligadas).
-- [x] OK em tela cheia abre a programação (agora e a seguir) em janela de vidro, letra maior (`EpgDialog`). A lista rápida de canais passou para a tecla das três listras.
+- [x] OK em tela cheia faz a faixa de baixo (vidro, letra maior: canal, agora, a seguir) subir e sumir sozinha. A lista rápida de canais passou para a tecla das três listras.
 - [x] Azul do app (`C.LIME`) só em destaque (contorno, barra, ícone, etiqueta com letra escura). Nenhum texto fica azul.
 - [ ] Validar no TV Box (TX9).
 
