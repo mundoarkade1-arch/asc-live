@@ -1,26 +1,27 @@
 package com.asclive.tvbox;
 
-import android.os.Handler;
-import android.os.Looper;
 import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
+import android.widget.AbsListView;
 import android.widget.BaseAdapter;
+import android.widget.FrameLayout;
+import android.widget.GridView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Tela "Ao vivo": categorias à esquerda e grade de canais (logo + nome) à direita.
+ * Tela "Ao vivo": primeiro uma GRADE DE CATEGORIAS (vidro fumê). OK em uma categoria abre os
+ * canais dela. Voltar volta para as categorias.
  * Como no ASC TV Box, cada canal aparece com a sua resolução (SD, HD, FHD, 4K): é só escolher
  * qual assistir. OK abre o canal direto.
  */
 final class LiveScreen extends GroupGridScreen {
+
+    private static final int COLS = 4;
 
     private static final class Data {
         final List<Catalog.Cat> cats;
@@ -32,68 +33,56 @@ final class LiveScreen extends GroupGridScreen {
         }
     }
 
-    private final LinearLayout root;
-    private final ListView catList;
+    private final FrameLayout root;
+    private final GridView catGrid;
     private final CatAdapter catAdapter = new CatAdapter();
-    private final Handler h = new Handler(Looper.getMainLooper());
+    private final LinearLayout channelsBox;
+    private final TextView crumb;
     private final List<String> catIds = new ArrayList<>();
     private final List<String> catNames = new ArrayList<>();
+    private final List<Integer> catCounts = new ArrayList<>();
     private List<ChannelGroup> all = new ArrayList<>();
-    private int chosen;
+    private int lastCat;
+    private boolean inChannels;
     private boolean loading;
 
     LiveScreen(ShellActivity act) {
         super(act);
-        root = new LinearLayout(act);
-        root.setOrientation(LinearLayout.HORIZONTAL);
-        root.setBackgroundColor(C.BG);
+        root = new FrameLayout(act);
 
-        catList = new ListView(act);
-        catList.setDivider(null);
-        catList.setVerticalScrollBarEnabled(false);
-        catList.setSelector(Ui.shape(C.SURFACE_FOCUS, Ui.dp(act, 12), C.LIME, Ui.dp(act, 2)));
-        catList.setDrawSelectorOnTop(false);
-        catList.setPadding(Ui.dp(act, 14), Ui.dp(act, 18), Ui.dp(act, 8), Ui.dp(act, 18));
-        catList.setClipToPadding(false);
-        catList.setAdapter(catAdapter);
-        catList.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                pickCategory(pos);
-            }
+        // ---- Grade de categorias ----
+        catGrid = new GridView(act);
+        catGrid.setNumColumns(COLS);
+        catGrid.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
+        catGrid.setHorizontalSpacing(Ui.dp(act, 14));
+        catGrid.setVerticalSpacing(Ui.dp(act, 14));
+        catGrid.setVerticalScrollBarEnabled(false);
+        catGrid.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        catGrid.setClipToPadding(false);
+        catGrid.setPadding(Ui.dp(act, 36), Ui.dp(act, 24), Ui.dp(act, 36), Ui.dp(act, 30));
+        catGrid.setSelector(Ui.shape(0x00000000, Ui.dp(act, 16), C.LIME, Ui.dp(act, 3)));
+        catGrid.setDrawSelectorOnTop(true);
+        catGrid.setAdapter(catAdapter);
+        catGrid.setOnItemClickListener((parent, view, pos, id) -> openCategory(pos));
+        root.addView(catGrid, new FrameLayout.LayoutParams(-1, -1));
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
-        catList.setOnItemClickListener((parent, view, pos, id) -> {
-            pickCategory(pos);
-            if (hasChannels()) {
-                grid.requestFocus();
-            }
-        });
-        catList.setOnKeyListener((v, keyCode, e) -> {
-            if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT && e.getAction() == KeyEvent.ACTION_DOWN) {
-                if (hasChannels()) {
-                    grid.requestFocus();
-                }
-                return true;
-            }
-            return false;
-        });
-        grid.setOnKeyListener((v, keyCode, e) -> {
-            if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT && e.getAction() == KeyEvent.ACTION_DOWN) {
-                int pos = grid.getSelectedItemPosition();
-                int cols = Math.max(1, grid.getNumColumns());
-                if (pos < 0 || pos % cols == 0) {
-                    catList.requestFocus();
-                    return true;
-                }
-            }
-            return false;
-        });
-        root.addView(catList, new LinearLayout.LayoutParams(Ui.dp(act, 270), -1));
-        root.addView(gridHolder, new LinearLayout.LayoutParams(0, -1, 1f));
+        // ---- Canais da categoria escolhida ----
+        channelsBox = new LinearLayout(act);
+        channelsBox.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout head = new LinearLayout(act);
+        head.setOrientation(LinearLayout.HORIZONTAL);
+        head.setGravity(Gravity.BOTTOM);
+        head.setPadding(Ui.dp(act, 36), Ui.dp(act, 22), Ui.dp(act, 36), Ui.dp(act, 6));
+        crumb = Ui.title(act, "", 30, C.TEXT);
+        crumb.setSingleLine(true);
+        crumb.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        head.addView(crumb, new LinearLayout.LayoutParams(0, -2, 1f));
+        TextView hint = Ui.text(act, "Voltar: categorias", 16, C.TEXT2);
+        head.addView(hint, new LinearLayout.LayoutParams(-2, -2));
+        channelsBox.addView(head, new LinearLayout.LayoutParams(-1, -2));
+        channelsBox.addView(gridHolder, new LinearLayout.LayoutParams(-1, 0, 1f));
+        channelsBox.setVisibility(View.GONE);
+        root.addView(channelsBox, new FrameLayout.LayoutParams(-1, -1));
     }
 
     @Override
@@ -103,10 +92,10 @@ final class LiveScreen extends GroupGridScreen {
 
     @Override
     View firstFocus() {
-        if (catAdapter.getCount() > 0) {
-            return catList;
+        if (inChannels) {
+            return hasChannels() ? grid : null;
         }
-        return null;
+        return catAdapter.getCount() > 0 ? catGrid : null;
     }
 
     @Override
@@ -120,12 +109,23 @@ final class LiveScreen extends GroupGridScreen {
         adapter.notifyDataSetChanged();
     }
 
+    @Override
+    boolean handleBack() {
+        if (inChannels) {
+            showCategories();
+            return true;
+        }
+        return false;
+    }
+
     private void load() {
         if (loading) {
             return;
         }
         loading = true;
         showNotice("Carregando canais...");
+        channelsBox.setVisibility(View.VISIBLE);
+        catGrid.setVisibility(View.GONE);
         bg(() -> new Data(Catalog.liveCategories(act), Catalog.allGroups(act)),
                 new Bg.Done<Data>() {
                     @Override
@@ -146,31 +146,38 @@ final class LiveScreen extends GroupGridScreen {
         all = d.groups;
         catIds.clear();
         catNames.clear();
+        catCounts.clear();
         catIds.add(null);
         catNames.add("Todos os canais");
+        catCounts.add(all.size());
         for (Catalog.Cat c : d.cats) {
+            int n = 0;
+            for (ChannelGroup g : all) {
+                if (c.id.equals(g.categoryId)) {
+                    n++;
+                }
+            }
+            if (n == 0) {
+                continue;
+            }
             catIds.add(c.id);
             catNames.add(c.name);
+            catCounts.add(n);
         }
-        chosen = 0;
+        lastCat = 0;
         catAdapter.notifyDataSetChanged();
-        applyCategory(0);
+        inChannels = false;
+        channelsBox.setVisibility(View.GONE);
+        catGrid.setVisibility(View.VISIBLE);
         act.focusReady(this);
     }
 
-    private void pickCategory(final int pos) {
-        if (pos == chosen || pos < 0 || pos >= catIds.size()) {
+    private void openCategory(int pos) {
+        if (pos < 0 || pos >= catIds.size()) {
             return;
         }
-        chosen = pos;
-        catAdapter.notifyDataSetChanged();
-        // Quem passa rápido pelas categorias não monta a grade a cada tecla.
-        h.removeCallbacksAndMessages(null);
-        h.postDelayed(() -> applyCategory(pos), 120);
-    }
-
-    private void applyCategory(int pos) {
-        String id = pos < catIds.size() ? catIds.get(pos) : null;
+        lastCat = pos;
+        String id = catIds.get(pos);
         List<ChannelGroup> out;
         if (id == null) {
             out = all;
@@ -182,14 +189,52 @@ final class LiveScreen extends GroupGridScreen {
                 }
             }
         }
+        crumb.setText(catNames.get(pos));
         setGroups(out, "Nenhum canal nesta categoria.");
         grid.setSelection(0);
+        inChannels = true;
+        catGrid.setVisibility(View.GONE);
+        channelsBox.setVisibility(View.VISIBLE);
+        if (hasChannels()) {
+            grid.requestFocus();
+        }
     }
 
-    @Override
-    void onHide() {
-        super.onHide();
-        h.removeCallbacksAndMessages(null);
+    private void showCategories() {
+        inChannels = false;
+        channelsBox.setVisibility(View.GONE);
+        catGrid.setVisibility(View.VISIBLE);
+        catGrid.setSelection(lastCat);
+        catGrid.requestFocus();
+    }
+
+    /** Um quadro de vidro com o nome da categoria e quantos canais ela tem. */
+    private static final class CatTile extends LinearLayout {
+        private final TextView name;
+        private final TextView count;
+
+        CatTile(ShellActivity a) {
+            super(a);
+            setOrientation(VERTICAL);
+            setGravity(Gravity.CENTER_VERTICAL);
+            setBackground(Ui.glass(a, 16));
+            setPadding(Ui.dp(a, 18), Ui.dp(a, 10), Ui.dp(a, 18), Ui.dp(a, 10));
+            setLayoutParams(new AbsListView.LayoutParams(-1, Ui.dp(a, 96)));
+            name = Ui.title(a, "", 20, C.TEXT);
+            name.setMaxLines(2);
+            name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            addView(name, new LayoutParams(-1, -2));
+            count = Ui.text(a, "", 14, C.TEXT2);
+            LayoutParams cl = new LayoutParams(-2, -2);
+            cl.topMargin = Ui.dp(a, 6);
+            addView(count, cl);
+        }
+
+        void bind(String title, int n, boolean first) {
+            name.setText(title);
+            name.setTextColor(first ? C.LIME : C.TEXT);
+            count.setText(n + (n == 1 ? " canal" : " canais"));
+        }
     }
 
     private final class CatAdapter extends BaseAdapter {
@@ -210,15 +255,8 @@ final class LiveScreen extends GroupGridScreen {
 
         @Override
         public View getView(int position, View convert, ViewGroup parent) {
-            TextView t = convert instanceof TextView ? (TextView) convert
-                    : Ui.text(act, "", 19, C.TEXT);
-            t.setText(catNames.get(position));
-            t.setSingleLine(true);
-            t.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            t.setGravity(Gravity.CENTER_VERTICAL);
-            t.setTextColor(position == chosen ? C.LIME : C.TEXT);
-            t.setTypeface(position == chosen ? Ui.bold(act) : Ui.medium(act));
-            t.setPadding(Ui.dp(act, 16), Ui.dp(act, 13), Ui.dp(act, 12), Ui.dp(act, 13));
+            CatTile t = convert instanceof CatTile ? (CatTile) convert : new CatTile(act);
+            t.bind(catNames.get(position), catCounts.get(position), position == 0);
             return t;
         }
     }

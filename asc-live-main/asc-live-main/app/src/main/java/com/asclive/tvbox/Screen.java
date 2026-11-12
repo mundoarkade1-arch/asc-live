@@ -42,6 +42,14 @@ abstract class Screen {
         return false;
     }
 
+    /**
+     * Tecla Voltar. Devolve true se a tela cuidou (ex.: voltar das categorias para a lista de
+     * categorias). Se devolver false, o Voltar segue o caminho normal (barra lateral).
+     */
+    boolean handleBack() {
+        return false;
+    }
+
     /** A janela do app foi para trás (outra tela por cima ou app em segundo plano). */
     void onPause() {
     }

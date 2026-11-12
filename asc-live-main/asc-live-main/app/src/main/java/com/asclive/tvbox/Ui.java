@@ -3,7 +3,9 @@ package com.asclive.tvbox;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -46,6 +48,26 @@ final class Ui {
             g.setStroke(strokePx, stroke);
         }
         return g;
+    }
+
+    /** Painel de vidro fumê: fundo claro transparente com borda fina. */
+    static GradientDrawable glass(Context c, float radiusDp) {
+        return shape(C.GLASS, dp(c, radiusDp), C.GLASS_EDGE, dp(c, 1));
+    }
+
+    /**
+     * Fundo do app: degradê escuro com um brilho limão suave no canto. Os painéis de vidro
+     * (transparentes) ficam por cima dele. Sem imagem e sem blur: leve para TV Box antigo.
+     */
+    static Drawable appBackground(Context c) {
+        GradientDrawable base = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{0xFF17240B, 0xFF101010, 0xFF081820});
+        GradientDrawable glow = new GradientDrawable();
+        glow.setGradientType(GradientDrawable.RADIAL_GRADIENT);
+        glow.setColors(new int[]{0x2EC8FF00, 0x00C8FF00});
+        glow.setGradientCenter(0.92f, 0.05f);
+        glow.setGradientRadius(screenW(c) * 0.7f);
+        return new LayerDrawable(new Drawable[]{base, glow});
     }
 
     static synchronized Typeface bold(Context c) {

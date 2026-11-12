@@ -21,7 +21,8 @@ import java.util.Set;
 /**
  * Quais canais da lista passam um jogo. Nenhuma fonte grátis é 100% certa, então são duas camadas:
  * 1) a tabela assets/transmissoes.json (liga -> emissoras), que o dono edita sem mexer no código;
- * 2) canais de evento da própria lista, com o nome de um dos times (ex.: "Flamengo x Palmeiras").
+ * 2) canais de evento da própria lista, com o nome dos times (ex.: "Flamengo x Palmeiras");
+ *    os que têm os dois times vêm primeiro, mesmo se o nome do time estiver escrito diferente.
  *
  * Faz leitura de arquivo e percorre a lista de canais: NUNCA chamar na thread principal.
  * Cada resolução de um canal (SD, HD, FHD, 4K) é um canal à parte, como no ASC TV Box.
@@ -57,19 +58,40 @@ final class Broadcasts {
         List<Broadcast> out = new ArrayList<>();
         Set<String> used = new HashSet<>();
 
-        // Camada 2: canais com o nome de um dos times.
-        List<ChannelGroup> event = new ArrayList<>();
-        String home = ChannelNames.queryKey(m.casa);
-        String away = ChannelNames.queryKey(m.fora);
+        // Camada 2: canais com o nome dos times. Os que têm os DOIS times vêm primeiro.
+        List<String> homeTok = tokens(m.casa);
+        List<String> awayTok = tokens(m.fora);
+        List<ChannelGroup> both = new ArrayList<>();
+        List<ChannelGroup> one = new ArrayList<>();
         for (ChannelGroup g : all) {
-            if (matches(g.key(), home, MIN_TEAM_LEN) || matches(g.key(), away, MIN_TEAM_LEN)) {
-                event.add(g);
-                if (event.size() >= MAX_PER_BROADCAST) {
-                    break;
+            boolean h = hasAll(g.key(), homeTok);
+            boolean a = hasAll(g.key(), awayTok);
+            if (h && a) {
+                both.add(g);
+            } else if (h || a) {
+                one.add(g);
+            }
+            if (both.size() + one.size() >= MAX_PER_BROADCAST) {
+                break;
+            }
+        }
+        if (both.isEmpty() && one.isEmpty()) {
+            // Plano B: só a palavra mais característica de cada time.
+            String hw = longest(homeTok);
+            String aw = longest(awayTok);
+            for (ChannelGroup g : all) {
+                if (matches(g.key(), hw, MIN_TEAM_LEN) || matches(g.key(), aw, MIN_TEAM_LEN)) {
+                    one.add(g);
+                    if (one.size() >= MAX_PER_BROADCAST) {
+                        break;
+                    }
                 }
             }
         }
-        sortNatural(event);
+        sortNatural(both);
+        sortNatural(one);
+        List<ChannelGroup> event = new ArrayList<>(both);
+        event.addAll(one);
         if (!event.isEmpty()) {
             for (ChannelGroup g : event) {
                 used.add(g.key());
@@ -111,6 +133,47 @@ final class Broadcasts {
             }
         }
         return out;
+    }
+
+    private static final Set<String> STOP = new HashSet<>(java.util.Arrays.asList(
+            "club", "clube", "futbol", "futebol", "football"));
+
+    /** Palavras do nome do time (sem acento, minúsculas, 4 letras ou mais). */
+    private static List<String> tokens(String team) {
+        List<String> out = new ArrayList<>();
+        String key = ChannelNames.queryKey(team);
+        for (String w : key.split(" ")) {
+            if (w.length() >= MIN_TEAM_LEN && !STOP.contains(w)) {
+                out.add(w);
+            }
+        }
+        if (out.isEmpty() && key.length() >= MIN_TEAM_LEN) {
+            out.add(key);
+        }
+        return out;
+    }
+
+    /** O canal tem TODAS as palavras do time? (lista vazia = não) */
+    private static boolean hasAll(String key, List<String> toks) {
+        if (toks.isEmpty()) {
+            return false;
+        }
+        for (String t : toks) {
+            if (!matches(key, t, MIN_TEAM_LEN)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static String longest(List<String> toks) {
+        String best = "";
+        for (String t : toks) {
+            if (t.length() > best.length()) {
+                best = t;
+            }
+        }
+        return best;
     }
 
     /**

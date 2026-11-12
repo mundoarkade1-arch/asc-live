@@ -50,7 +50,6 @@ abstract class GroupGridScreen extends Screen {
         notice.setGravity(Gravity.CENTER);
         notice.setPadding(Ui.dp(act, 40), 0, Ui.dp(act, 40), 0);
         gridHolder = new FrameLayout(act);
-        gridHolder.setBackgroundColor(C.BG);
         gridHolder.addView(grid, new FrameLayout.LayoutParams(-1, -1));
         gridHolder.addView(notice, new FrameLayout.LayoutParams(-1, -1));
         notice.setVisibility(View.GONE);

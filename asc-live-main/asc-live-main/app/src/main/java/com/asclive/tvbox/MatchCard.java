@@ -34,7 +34,7 @@ final class MatchCard extends LinearLayout {
         super(c);
         setOrientation(HORIZONTAL);
         setGravity(Gravity.CENTER_VERTICAL);
-        setBackground(Ui.shape(C.SURFACE, Ui.dp(c, 16), C.LINE, Ui.dp(c, 1)));
+        setBackground(Ui.glass(c, 16));
         setPadding(Ui.dp(c, 22), Ui.dp(c, 10), Ui.dp(c, 22), Ui.dp(c, 10));
         setLayoutParams(new AbsListView.LayoutParams(-1, Ui.dp(c, 92)));
 

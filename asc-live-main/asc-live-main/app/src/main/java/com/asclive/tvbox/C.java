@@ -13,6 +13,13 @@ final class C {
     static final int LIME_40 = 0x66C8FF00;
     static final int ERROR = 0xFFFF5C5C;
     static final int SHADE = 0xCC101010;
+    /** Vidro fumê: fundo claro bem transparente, borda fina e destaque ao focar. */
+    static final int GLASS = 0x1AFFFFFF;
+    static final int GLASS_HI = 0x33FFFFFF;
+    static final int GLASS_EDGE = 0x33FFFFFF;
+    /** Fumaça escura para a barra lateral e as janelas. */
+    static final int SMOKE = 0x99000000;
+    static final int SMOKE_DEEP = 0xEE141414;
 
     private C() {
     }

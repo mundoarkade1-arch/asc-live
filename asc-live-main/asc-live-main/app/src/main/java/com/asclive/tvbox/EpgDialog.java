@@ -47,7 +47,7 @@ final class EpgDialog {
 
         LinearLayout box = new LinearLayout(act);
         box.setOrientation(LinearLayout.VERTICAL);
-        box.setBackground(Ui.shape(C.SURFACE, Ui.dp(act, 20), C.LINE, Ui.dp(act, 1)));
+        box.setBackground(Ui.shape(C.SMOKE_DEEP, Ui.dp(act, 20), C.GLASS_EDGE, Ui.dp(act, 1)));
         int pad = Ui.dp(act, 26);
         box.setPadding(pad, pad, pad, pad);
 

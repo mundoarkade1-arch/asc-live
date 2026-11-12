@@ -25,7 +25,6 @@ final class SearchScreen extends GroupGridScreen {
         super(act);
         root = new LinearLayout(act);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(C.BG);
 
         LinearLayout top = new LinearLayout(act);
         top.setOrientation(LinearLayout.HORIZONTAL);

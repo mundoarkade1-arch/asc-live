@@ -67,7 +67,7 @@ final class Sidebar extends LinearLayout {
         narrow = Ui.dp(c, 72);
         wide = Ui.dp(c, 250);
         setOrientation(VERTICAL);
-        setBackgroundColor(C.BG);
+        setBackgroundColor(C.SMOKE);
         setPadding(0, Ui.dp(c, 18), 0, Ui.dp(c, 18));
         setLayoutParams(new FrameLayout.LayoutParams(narrow, -1));
 
@@ -258,7 +258,7 @@ final class Sidebar extends LinearLayout {
         for (Row r : rows) {
             r.label.setVisibility(open ? VISIBLE : GONE);
         }
-        setBackgroundColor(open ? C.SURFACE : C.BG);
+        setBackgroundColor(open ? C.SMOKE_DEEP : C.SMOKE);
         android.view.ViewGroup.LayoutParams lp = getLayoutParams();
         int w = open ? wide : narrow;
         if (lp != null && lp.width != w) {

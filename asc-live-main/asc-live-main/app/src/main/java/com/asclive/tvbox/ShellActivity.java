@@ -32,7 +32,7 @@ public class ShellActivity extends Activity implements Sidebar.Listener {
             return;
         }
         FrameLayout root = new FrameLayout(this);
-        root.setBackgroundColor(C.BG);
+        root.setBackground(Ui.appBackground(this));
         content = new FrameLayout(this);
         FrameLayout.LayoutParams clp = new FrameLayout.LayoutParams(-1, -1);
         clp.leftMargin = Ui.dp(this, 72);
@@ -253,6 +253,9 @@ public class ShellActivity extends Activity implements Sidebar.Listener {
 
     @Override
     public void onBackPressed() {
+        if (current != null && !sidebar.hasFocus() && current.handleBack()) {
+            return;
+        }
         if (currentId == Sidebar.SEARCH) {
             showScreen(Sidebar.FOOTBALL, true);
             return;

@@ -16,7 +16,8 @@ import java.util.Locale;
 
 /**
  * Tela "Futebol": jogos do dia (escudos, horário, placar e selo AO VIVO). OK no jogo abre as
- * emissoras (BroadcastDialog). Se a fonte de jogos falhar, mostra "sem jogos agora".
+ * emissoras (BroadcastDialog). Se a fonte de jogos falhar, o app acha os jogos nos nomes dos
+ * canais da própria lista (ListGames). Se nada aparecer, mostra "sem jogos agora".
  */
 final class FootballScreen extends Screen {
 
@@ -33,7 +34,6 @@ final class FootballScreen extends Screen {
         super(act);
         root = new LinearLayout(act);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(C.BG);
 
         LinearLayout top = new LinearLayout(act);
         top.setOrientation(LinearLayout.HORIZONTAL);
@@ -97,7 +97,7 @@ final class FootballScreen extends Screen {
         if (matches.isEmpty()) {
             showNotice("Buscando os jogos de hoje...");
         }
-        bg(() -> FootballApi.today(act), new Bg.Done<List<Match>>() {
+        bg(() -> ListGames.merge(act, FootballApi.today(act)), new Bg.Done<List<Match>>() {
             @Override
             public void ok(List<Match> v) {
                 loading = false;
