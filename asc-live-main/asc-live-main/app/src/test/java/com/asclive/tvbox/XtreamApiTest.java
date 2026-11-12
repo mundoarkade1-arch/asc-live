@@ -7,20 +7,20 @@ import org.junit.Test;
 public class XtreamApiTest {
 
     @Test
-    public void usesContainerReportedByServer() {
-        XtreamApi.Item item = new XtreamApi.Item(XtreamApi.Kind.LIVE, "42", "Canal", "",
-                "1", "", "ts");
+    public void preservesDirectTsUrlWithoutAndroidUriEncoding() {
+        XtreamApi.Item item = new XtreamApi.Item(XtreamApi.Kind.LIVE, "1", "Channel", "", "", "",
+                "ts", "https://server.invalid/live/1.ts", "https://server.invalid/live/1.ts", null);
 
-        assertEquals("https://server.example/live/user/pass/42.ts",
-                XtreamApi.streamUrl("https://server.example/", "user", "pass", item));
+        assertEquals("https://server.invalid/live/1.ts",
+                XtreamApi.streamUrl("https://server.invalid", "user", "pass", item));
     }
 
     @Test
-    public void defaultsToHlsWhenServerOmitsContainer() {
-        XtreamApi.Item item = new XtreamApi.Item(XtreamApi.Kind.LIVE, "42", "Canal", "",
-                "1", "", "");
+    public void preservesDirectHlsUrlWithoutAndroidUriEncoding() {
+        XtreamApi.Item item = new XtreamApi.Item(XtreamApi.Kind.LIVE, "2", "Channel", "", "", "",
+                "m3u8", "https://server.invalid/live/2.m3u8", "https://server.invalid/live/2.m3u8", null);
 
-        assertEquals("https://server.example/live/user/pass/42.m3u8",
-                XtreamApi.streamUrl("https://server.example//", "user", "pass", item));
+        assertEquals("https://server.invalid/live/2.m3u8",
+                XtreamApi.streamUrl("https://server.invalid", "user", "pass", item));
     }
 }

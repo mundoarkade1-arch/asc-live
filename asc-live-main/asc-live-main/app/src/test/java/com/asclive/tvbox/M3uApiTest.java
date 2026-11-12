@@ -58,10 +58,10 @@ public class M3uApiTest {
     }
 
     @Test
-    public void acceptsKnownHeadersFromExtHttpMetadata() {
+    public void acceptsKnownHeadersFromExtHttpMetadataFallbackSyntax() {
         Map<String, String> headers = new LinkedHashMap<>();
         M3uApi.parseHttpMetadata(
-                "{\"User-Agent\":\"Json/1\",\"Referer\":\"https://example.invalid\",\"unknown\":\"ignored\"}",
+                "User-Agent=Json%2F1&Referer=https%3A%2F%2Fexample.invalid&unknown=ignored",
                 headers);
 
         assertEquals("Json/1", headers.get("User-Agent"));

@@ -83,6 +83,8 @@ final class SettingsScreen extends Screen {
 
         section("Aplicativo");
         row("Procurar atualização", "Versão " + versionName(), () -> UpdateUi.checkNow(act));
+        row("Diagnóstico de reprodução", "Ver última tentativa",
+                () -> PlaybackDiagnosticsDialog.show(act));
         row("Limpar cache (canais, jogos e imagens)", "", this::clearUsage);
         row("Sobre o aplicativo e o aparelho", "", this::about);
     }

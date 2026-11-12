@@ -8,6 +8,7 @@ import android.os.Looper;
 import android.util.Log;
 
 import androidx.media3.common.AudioAttributes;
+import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MimeTypes;
 import androidx.media3.common.PlaybackException;
@@ -16,8 +17,12 @@ import androidx.media3.datasource.HttpDataSource;
 import androidx.media3.exoplayer.DefaultLoadControl;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.analytics.AnalyticsListener;
+import androidx.media3.exoplayer.analytics.AnalyticsListener.EventTime;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
+import androidx.media3.exoplayer.source.LoadEventInfo;
+import androidx.media3.exoplayer.source.MediaLoadData;
 import androidx.media3.exoplayer.source.MediaSource;
 import androidx.media3.extractor.DefaultExtractorsFactory;
 import androidx.media3.extractor.ts.DefaultTsPayloadReaderFactory;
@@ -25,6 +30,9 @@ import androidx.media3.extractor.ts.DefaultTsPayloadReaderFactory;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -84,12 +92,23 @@ final class LivePlayer {
     private boolean failureHandled;
     private boolean triedXtreamFormat;
     private String forcedUrl;
+    private long attemptStartedAt;
+    private String lastFailure = "none";
+    private int lastState = Player.STATE_IDLE;
+    private PlaybackDiagnostics.Session diagnostics;
+    private int attemptNumber;
 
     private final Runnable stall = new Runnable() {
         @Override
         public void run() {
             stallArmed = false;
             if (active) {
+                Log.e("ASC.LivePlayer", "stage=watchdog_timeout state=" + stateName(lastState)
+                        + " elapsedMs=" + (System.currentTimeMillis() - attemptStartedAt)
+                        + " lastFailure=" + lastFailure);
+                diagFailure("watchdog_timeout", "state=" + stateName(lastState)
+                        + ",elapsedMs=" + (System.currentTimeMillis() - attemptStartedAt)
+                        + ",lastFailure=" + lastFailure);
                 onFail();
             }
         }
@@ -139,16 +158,100 @@ final class LivePlayer {
         player.addListener(new Player.Listener() {
             @Override
             public void onPlaybackStateChanged(int state) {
+                lastState = state;
+                Log.i("ASC.LivePlayer", "state=" + stateName(state)
+                        + " stage=player_callback");
+                diagEvent("state", "state=" + stateName(state));
                 handleState(state);
             }
 
             @Override
             public void onPlayerError(PlaybackException error) {
-                Log.e("ASC.LivePlayer", "playback error code=" + error.errorCode
-                        + " type=" + causeType(error) + " http=" + httpCode(error));
+                lastFailure = errorSummary(error);
+                logPlaybackError("player_error", error);
+                diagFailure("player_error", "code=" + error.errorCode
+                        + ",name=" + PlaybackException.getErrorCodeName(error.errorCode)
+                        + ",http=" + httpCode(error) + ",cause=" + errorSummary(error));
                 if (active) {
                     onFail();
                 }
+            }
+
+            @Override
+            public void onIsPlayingChanged(boolean isPlaying) {
+                Log.i("ASC.LivePlayer", "isPlaying=" + isPlaying + " stage=player_callback");
+                diagEvent("is_playing_changed", "value=" + isPlaying);
+            }
+        });
+        player.addAnalyticsListener(new AnalyticsListener() {
+            @Override
+            public void onLoadStarted(EventTime eventTime, LoadEventInfo info,
+                                      MediaLoadData data) {
+                Log.d("ASC.LivePlayer", "stage=http_request_started type="
+                        + mediaType(data) + " content=" + contentType(info));
+                diagEvent("http_request_started", "type=" + mediaType(data)
+                        + ",content=" + contentType(info));
+            }
+
+            @Override
+            public void onLoadCompleted(EventTime eventTime, LoadEventInfo info,
+                                        MediaLoadData data) {
+                Log.d("ASC.LivePlayer", "stage=http_response type=" + mediaType(data)
+                        + " content=" + contentType(info) + " bytes=" + info.bytesLoaded);
+                diagEvent("http_response", "type=" + mediaType(data)
+                        + ",content=" + contentType(info) + ",bytes=" + info.bytesLoaded);
+            }
+
+            @Override
+            public void onLoadError(EventTime eventTime, LoadEventInfo info,
+                                    MediaLoadData data, IOException error,
+                                    boolean wasCanceled) {
+                lastFailure = errorSummary(error);
+                Log.e("ASC.LivePlayer", "stage=http_error type=" + mediaType(data)
+                        + " content=" + contentType(info) + " canceled=" + wasCanceled
+                        + " error=" + errorSummary(error));
+                diagFailure("http_error", "type=" + mediaType(data)
+                        + ",content=" + contentType(info) + ",canceled=" + wasCanceled
+                        + ",http=" + httpCode(error) + ",error=" + errorSummary(error));
+            }
+
+            @Override
+            public void onDownstreamFormatChanged(EventTime eventTime, MediaLoadData data) {
+                Log.i("ASC.LivePlayer", "stage=format_detected mime="
+                        + safeText(data.trackFormat == null ? null : data.trackFormat.sampleMimeType)
+                        + " codecs=" + safeText(data.trackFormat == null
+                        ? null : data.trackFormat.codecs));
+                diagEvent("format_detected", "mime="
+                        + safeText(data.trackFormat == null ? null : data.trackFormat.sampleMimeType)
+                        + ",codecs=" + safeText(data.trackFormat == null
+                        ? null : data.trackFormat.codecs));
+            }
+
+            @Override
+            public void onVideoDecoderInitialized(EventTime eventTime, String decoderName,
+                                                   long initializedTimestampMs,
+                                                   long initializationDurationMs) {
+                Log.i("ASC.LivePlayer", "stage=video_decoder decoder="
+                        + safeText(decoderName) + " initMs=" + initializationDurationMs);
+                diagEvent("video_decoder", "decoder=" + safeText(decoderName)
+                        + ",initMs=" + initializationDurationMs);
+            }
+
+            @Override
+            public void onAudioDecoderInitialized(EventTime eventTime, String decoderName,
+                                                   long initializedTimestampMs,
+                                                   long initializationDurationMs) {
+                Log.i("ASC.LivePlayer", "stage=audio_decoder decoder="
+                        + safeText(decoderName) + " initMs=" + initializationDurationMs);
+                diagEvent("audio_decoder", "decoder=" + safeText(decoderName)
+                        + ",initMs=" + initializationDurationMs);
+            }
+
+            @Override
+            public void onRenderedFirstFrame(EventTime eventTime, Object output,
+                                             long renderTimeMs) {
+                Log.i("ASC.LivePlayer", "stage=first_frame renderMs=" + renderTimeMs);
+                diagEvent("first_frame", "renderMs=" + renderTimeMs);
             }
         });
     }
@@ -193,10 +296,20 @@ final class LivePlayer {
         pos = 0;
         round = 0;
         active = true;
+        attemptNumber = 0;
+        if (diagnostics != null) {
+            diagnostics.finish("replaced", "nova_sessao=true");
+        }
+        diagnostics = PlaybackDiagnostics.start(app, safeName(g), safeId(g));
+        diagEvent("play_requested", "requestedVariant=" + versao);
         startAttempt();
         } catch (Exception e) {
             active = false;
             Log.e("ASC.LivePlayer", "play failed: " + e.getClass().getSimpleName());
+            diagFailure("play_failed", "error=" + errorSummary(e));
+            if (diagnostics != null) {
+                diagnostics.finish("failed", "stage=play");
+            }
             if (listener != null) listener.onFailed(g);
         }
     }
@@ -209,6 +322,10 @@ final class LivePlayer {
         stallArmed = false;
         player.stop();
         player.clearMediaItems();
+        if (diagnostics != null) {
+            diagnostics.finish("stopped", "active=" + active);
+            diagnostics = null;
+        }
     }
 
     private static int[] buildOrder(ChannelGroup g, int start) {
@@ -236,11 +353,17 @@ final class LivePlayer {
             return;
         }
         final int vi = order[pos];
+        attemptNumber++;
+        attemptStartedAt = System.currentTimeMillis();
+        lastFailure = "none";
+        lastState = Player.STATE_IDLE;
         String url = forcedUrl != null ? forcedUrl : Catalog.urlOf(app, g.variants.get(vi).item);
         forcedUrl = null;
         attemptOk = false;
         failureHandled = false;
         if (url == null) {
+            lastFailure = "missing_media_url";
+            diagFailure("missing_media_url", "attempt=" + attemptNumber);
             Log.e("ASC.LivePlayer", "media source missing for selected channel");
             onFail();
             return;
@@ -251,11 +374,16 @@ final class LivePlayer {
             String scheme = mediaUri.getScheme();
             if (mediaUri.getHost() == null
                     || !("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))) {
+                lastFailure = "invalid_http_uri";
+                diagFailure("invalid_http_uri", "attempt=" + attemptNumber);
                 Log.e("ASC.LivePlayer", "media source has invalid scheme or host");
                 onFail();
                 return;
             }
         } catch (Exception e) {
+            lastFailure = errorSummary(e);
+            diagFailure("invalid_uri_exception", "attempt=" + attemptNumber
+                    + ",error=" + errorSummary(e));
             Log.e("ASC.LivePlayer", "media source URI is invalid: " + e.getClass().getSimpleName());
             onFail();
             return;
@@ -263,9 +391,10 @@ final class LivePlayer {
         if (listener != null) {
             listener.onOpening(g, vi);
         }
-        Log.i("ASC.LivePlayer", "opening channel=" + safeName(g) + " id="
-                + safeId(g) + " format=" + pathOf(url).substring(Math.max(0,
-                pathOf(url).lastIndexOf('.') + 1)));
+        Log.i("ASC.LivePlayer", "stage=validated_url channel=" + safeName(g) + " id="
+                + safeId(g) + " media=" + mediaKind(url) + " uri=" + uriSummary(mediaUri));
+        diagEvent("attempt_started", "attemptId=" + attemptId() + ",media=" + mediaKind(url)
+                + ",uri=" + uriSummary(mediaUri));
         XtreamApi.Item item = g.variants.get(vi).item;
         Map<String, String> headers = new LinkedHashMap<>(item.headers);
         if (!headers.containsKey("User-Agent")) {
@@ -277,27 +406,36 @@ final class LivePlayer {
                 .setReadTimeoutMs(30000)
                 .setAllowCrossProtocolRedirects(true)
                 .setKeepPostFor302Redirects(true);
-        MediaItem.Builder b = new MediaItem.Builder().setUri(mediaUri);
-        if (pathOf(url).endsWith(".m3u8")) {
-            b.setMimeType(MimeTypes.APPLICATION_M3U8); // não precisa adivinhar o formato
-        }
+        MediaItem mediaItem = buildMediaItem(mediaUri);
+        Log.d("ASC.LivePlayer", "stage=media_item_created media=" + mediaKind(url)
+                + " uri=" + uriSummary(mediaUri) + " headers=" + headerSummary(headers));
+        diagEvent("media_item_created", "attemptId=" + attemptId() + ",media=" + mediaKind(url)
+                + ",uri=" + uriSummary(mediaUri) + ",headers=" + headerSummary(headers));
         try {
             MediaSource source = new DefaultMediaSourceFactory(channelHttp, extractors)
-                    .createMediaSource(b.build());
+                    .createMediaSource(mediaItem);
             Log.d("ASC.LivePlayer", "media source configured channel=" + safeName(g)
-                    + " hls=" + pathOf(url).endsWith(".m3u8")
+                    + " media=" + mediaKind(url)
                     + " headers=" + headerSummary(headers));
+            diagEvent("media_source_configured", "attemptId=" + attemptId()
+                    + ",media=" + mediaKind(url) + ",headers=" + headerSummary(headers));
             player.setMediaSource(source);
             player.prepare();
             player.setPlayWhenReady(true);
         } catch (Exception e) {
-            Log.e("ASC.LivePlayer", "prepare failed: " + e.getClass().getSimpleName());
+            lastFailure = errorSummary(e);
+            Log.e("ASC.LivePlayer", "stage=prepare_failed error=" + errorSummary(e));
+            diagFailure("prepare_failed", "attempt=" + attemptNumber
+                    + ",error=" + errorSummary(e));
             onFail();
             return;
         }
         main.removeCallbacks(stall);
         stallArmed = true;
         main.postDelayed(stall, STALL_MS);
+        Log.d("ASC.LivePlayer", "stage=prepared_waiting_for_ready watchdogMs=" + STALL_MS);
+        diagEvent("prepared_waiting_for_ready", "attemptId=" + attemptId()
+                + ",watchdogMs=" + STALL_MS);
     }
 
     private void handleState(int state) {
@@ -318,14 +456,17 @@ final class LivePlayer {
                 }
                 Log.i("ASC.LivePlayer", "playing channel=" + safeName(group)
                         + " id=" + safeId(group));
+                diagEvent("playing", "variant=" + vi);
             }
         } else if (state == Player.STATE_BUFFERING) {
             Log.d("ASC.LivePlayer", "buffering channel=" + safeName(group));
+            diagEvent("buffering", "attempt=" + attemptNumber);
             if (attemptOk && !stallArmed) {
                 stallArmed = true; // travou no meio da transmissão
                 main.postDelayed(stall, STALL_MS);
             }
         } else if (state == Player.STATE_ENDED) {
+            diagFailure("ended", "attempt=" + attemptNumber);
             onFail();
         }
     }
@@ -336,6 +477,12 @@ final class LivePlayer {
             return;
         }
         failureHandled = true;
+        Log.e("ASC.LivePlayer", "stage=fail_transition state=" + stateName(lastState)
+                + " elapsedMs=" + (System.currentTimeMillis() - attemptStartedAt)
+                + " reason=" + lastFailure);
+        diagEvent("fail_transition", "state=" + stateName(lastState)
+                + ",elapsedMs=" + (System.currentTimeMillis() - attemptStartedAt)
+                + ",reason=" + lastFailure);
         main.removeCallbacks(stall);
         stallArmed = false;
         if (order.length == 0) {
@@ -344,11 +491,15 @@ final class LivePlayer {
             return;
         }
         if (pos + 1 < order.length) {
+            Log.w("ASC.LivePlayer", "stage=retry_next_variant");
+            diagEvent("retry_next_variant", "nextIndex=" + (pos + 1));
             pos++;
             startAttempt();
             return;
         }
         if (round < MAX_RECONNECTS) {
+            Log.w("ASC.LivePlayer", "stage=retry_reconnect round=" + (round + 1));
+            diagEvent("retry_reconnect", "round=" + (round + 1));
             long wait = 1000L << round;
             round++;
             order = new int[]{order[0]}; // nas reconexões, só a primeira versão
@@ -368,6 +519,8 @@ final class LivePlayer {
             String primary = Catalog.urlOf(app, group.variants.get(order[0]).item);
             String alternate = alternateFormat(primary);
             if (alternate != null) {
+                Log.w("ASC.LivePlayer", "stage=retry_alternate_xtream_format");
+                diagEvent("retry_alternate_xtream_format", "format_change=true");
                 triedXtreamFormat = true;
                 forcedUrl = alternate;
                 round = 0;
@@ -378,6 +531,11 @@ final class LivePlayer {
             }
         }
         active = false;
+        Log.e("ASC.LivePlayer", "stage=failed_all_attempts");
+        diagFailure("failed_all_attempts", "lastFailure=" + lastFailure);
+        if (diagnostics != null) {
+            diagnostics.finish("failed", "firstFailureRecorded=true");
+        }
         player.stop();
         if (listener != null && group != null) {
             listener.onFailed(group);
@@ -408,6 +566,111 @@ final class LivePlayer {
                     || n.contains("Decoder") || n.contains("DataSource")) return n;
         }
         return error == null ? "unknown" : error.getClass().getSimpleName();
+    }
+
+    private void diagEvent(String stage, String details) {
+        if (diagnostics != null) {
+            diagnostics.event(stage, details);
+        }
+    }
+
+    private void diagFailure(String stage, String details) {
+        if (diagnostics != null) {
+            diagnostics.firstFailure(stage, details);
+        }
+    }
+
+    private String attemptId() {
+        return diagnostics == null ? "unknown" : diagnostics.id() + "-a" + attemptNumber;
+    }
+
+    static MediaItem buildMediaItem(Uri uri) {
+        MediaItem.Builder builder = new MediaItem.Builder().setUri(uri);
+        if (uri != null && pathOf(uri.toString()).endsWith(".m3u8")) {
+            builder.setMimeType(MimeTypes.APPLICATION_M3U8);
+        }
+        return builder.build();
+    }
+
+    private static String stateName(int state) {
+        switch (state) {
+            case Player.STATE_IDLE: return "IDLE";
+            case Player.STATE_BUFFERING: return "BUFFERING";
+            case Player.STATE_READY: return "READY";
+            case Player.STATE_ENDED: return "ENDED";
+            default: return "UNKNOWN";
+        }
+    }
+
+    private static String mediaKind(String url) {
+        return pathOf(url).endsWith(".m3u8") ? "HLS" : "PROGRESSIVE_OR_TS";
+    }
+
+    private static String uriSummary(Uri uri) {
+        if (uri == null) return "null";
+        return "scheme=" + safeText(uri.getScheme()) + ",chars=" + uri.toString().length()
+                + ",query=" + (uri.getQuery() != null) + ",sha256=" + shortHash(uri.toString());
+    }
+
+    private static String shortHash(String value) {
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256")
+                    .digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder out = new StringBuilder();
+            for (int i = 0; i < 6; i++) out.append(String.format(Locale.ROOT, "%02x", hash[i]));
+            return out.toString();
+        } catch (Exception ignored) {
+            return "unavailable";
+        }
+    }
+
+    private static String mediaType(MediaLoadData data) {
+        if (data == null) return "unknown";
+        if (data.dataType == C.DATA_TYPE_MANIFEST) return "manifest";
+        if (data.dataType == C.DATA_TYPE_MEDIA) return "media";
+        return String.valueOf(data.dataType);
+    }
+
+    private static String contentType(LoadEventInfo info) {
+        if (info == null || info.responseHeaders == null) return "unknown";
+        for (Map.Entry<String, java.util.List<String>> entry : info.responseHeaders.entrySet()) {
+            if (entry.getKey() != null && "content-type".equalsIgnoreCase(entry.getKey())
+                    && entry.getValue() != null && !entry.getValue().isEmpty()) {
+                return safeText(entry.getValue().get(0));
+            }
+        }
+        return "unknown";
+    }
+
+    private static String errorSummary(Throwable error) {
+        if (error == null) return "none";
+        StringBuilder out = new StringBuilder();
+        Throwable current = error;
+        for (int i = 0; current != null && i < 6; i++, current = current.getCause()) {
+            if (i > 0) out.append(" <- ");
+            out.append(current.getClass().getSimpleName());
+            String message = current.getMessage();
+            if (message != null && !message.isEmpty()) {
+                out.append(":").append(sanitizeMessage(message));
+            }
+        }
+        return out.toString();
+    }
+
+    private static void logPlaybackError(String stage, PlaybackException error) {
+        Log.e("ASC.LivePlayer", "stage=" + stage + " code=" + error.errorCode
+                + " name=" + safeText(PlaybackException.getErrorCodeName(error.errorCode))
+                + " http=" + httpCode(error)
+                + " cause=" + errorSummary(error));
+    }
+
+    private static String sanitizeMessage(String message) {
+        String s = message.replaceAll("https?://\\S+", "<url>");
+        return s.length() > 220 ? s.substring(0, 220) : s;
+    }
+
+    private static String safeText(String text) {
+        return text == null || text.isEmpty() ? "unknown" : sanitizeMessage(text);
     }
 
     private static int httpCode(Throwable error) {
