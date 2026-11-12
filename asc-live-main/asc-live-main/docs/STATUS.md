@@ -100,6 +100,14 @@ Feito (compilado só por sintaxe; o build do Actions e o teste no TX9 são a pro
 - [x] Canais relacionados aparecem no painel da partida e abrem o player existente diretamente.
 - [ ] Validar visual e foco no TV Box.
 
+## Rodada 19 (reprodução IPTV e remoção de perfis)
+- [x] Xtream agora normaliza barras finais do servidor e usa URL `.m3u8` ao vivo; isso evita `//live` e usa o formato HLS esperado por muitos servidores.
+- [x] M3U continua entregando a URL original completa ao player, incluindo query string e autenticação.
+- [x] Entrada do app e retorno do login não passam mais por seleção de perfil.
+- [x] Favoritos foram migrados para um armazenamento único do aparelho, com importação dos favoritos antigos quando disponíveis.
+- [x] `Profiles`/`ProfilesActivity` foram removidos do ASC Live e a Activity saiu do Manifest.
+- [ ] Validar reprodução real HLS/TS e troca de canais no TV Box; não há ADB/emulador neste ambiente.
+
 ## Rodada 18 (diagnóstico e proteção do fluxo do player)
 - [x] Validada a cadeia de abertura: seleção da grade -> `LiveSession` em memória -> `LivePlayerActivity` -> `LivePlayer`/Media3.
 - [x] Player valida esquema e host da fonte antes de preparar a mídia; falha de URL não derruba a Activity.

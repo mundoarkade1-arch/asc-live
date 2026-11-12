@@ -168,53 +168,8 @@ final class Dialogs {
         show(d, a);
     }
 
-    /** Escolha de avatar (sem avatar marcado antes). */
-    static void avatars(Activity a, String name, OnPick pick) {
-        avatars(a, name, 0, pick);
-    }
-
     /**
      * Escolha de avatar: os 12 bonequinhos numa grade de 6 por linha, para o controle remoto.
      * O foco começa no avatar atual (selected).
      */
-    static void avatars(Activity a, String name, int selected, OnPick pick) {
-        LinearLayout box = new LinearLayout(a);
-        Dialog d = base(a, box);
-        head(a, box, "Escolha um avatar", null);
-        int perRow = 6;
-        LinearLayout line = null;
-        for (int i = 0; i < Profiles.avatarCount(); i++) {
-            final int idx = i;
-            if (i % perRow == 0) {
-                line = new LinearLayout(a);
-                line.setOrientation(LinearLayout.HORIZONTAL);
-                line.setGravity(Gravity.CENTER);
-                LinearLayout.LayoutParams rl = new LinearLayout.LayoutParams(-2, -2);
-                rl.topMargin = Ui.dp(a, 14);
-                box.addView(line, rl);
-            }
-            ImageView img = new ImageView(a);
-            img.setImageResource(Profiles.avatarRes(i));
-            img.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            img.setFocusable(true);
-            img.setClickable(true);
-            int pad = Ui.dp(a, 5);
-            img.setPadding(pad, pad, pad, pad);
-            img.setBackground(Ui.focusBg(a, 0x00000000, 0x00000000, 36,
-                    i == selected ? C.LIME_40 : 0x00000000,
-                    i == selected ? Ui.dp(a, 2) : 0));
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(Ui.dp(a, 64),
-                    Ui.dp(a, 64));
-            lp.setMargins(Ui.dp(a, 4), 0, Ui.dp(a, 4), 0);
-            line.addView(img, lp);
-            img.setOnClickListener((View v) -> {
-                d.dismiss();
-                pick.pick(idx);
-            });
-            if (i == selected) {
-                img.requestFocus();
-            }
-        }
-        show(d, a);
-    }
 }

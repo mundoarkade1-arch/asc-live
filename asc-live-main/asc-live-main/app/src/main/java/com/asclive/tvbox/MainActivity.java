@@ -53,10 +53,8 @@ public class MainActivity extends Activity {
     private void route() {
         if (Catalog.creds(this) == null) {
             startActivity(new Intent(this, LoginActivity.class));
-        } else if (Profiles.needsWelcome(this)) {
-            startActivity(new Intent(this, ProfilesActivity.class).putExtra("welcome", true));
         } else {
-            startActivity(new Intent(this, ProfilesActivity.class).putExtra("pick", true));
+            startActivity(new Intent(this, ShellActivity.class));
         }
         finish();
     }

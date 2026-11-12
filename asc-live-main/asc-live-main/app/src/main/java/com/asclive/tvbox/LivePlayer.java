@@ -139,8 +139,7 @@ final class LivePlayer {
             @Override
             public void onPlayerError(PlaybackException error) {
                 Log.e("ASC.LivePlayer", "playback error code=" + error.errorCode
-                        + " cause=" + (error.getCause() == null
-                        ? "unknown" : error.getCause().getClass().getSimpleName()));
+                        + " type=" + causeType(error));
                 if (active) {
                     onFail();
                 }
@@ -258,6 +257,9 @@ final class LivePlayer {
         if (listener != null) {
             listener.onOpening(g, vi);
         }
+        Log.i("ASC.LivePlayer", "opening channel=" + safeName(g) + " id="
+                + safeId(g) + " format=" + pathOf(url).substring(Math.max(0,
+                pathOf(url).lastIndexOf('.') + 1)));
         MediaItem.Builder b = new MediaItem.Builder().setUri(mediaUri);
         if (pathOf(url).endsWith(".m3u8")) {
             b.setMimeType(MimeTypes.APPLICATION_M3U8); // não precisa adivinhar o formato
@@ -292,8 +294,11 @@ final class LivePlayer {
                 if (listener != null) {
                     listener.onPlaying(group, vi);
                 }
+                Log.i("ASC.LivePlayer", "playing channel=" + safeName(group)
+                        + " id=" + safeId(group));
             }
         } else if (state == Player.STATE_BUFFERING) {
+            Log.d("ASC.LivePlayer", "buffering channel=" + safeName(group));
             if (attemptOk && !stallArmed) {
                 stallArmed = true; // travou no meio da transmissão
                 main.postDelayed(stall, STALL_MS);
@@ -361,6 +366,26 @@ final class LivePlayer {
         String u = url.toLowerCase(Locale.ROOT);
         int q = u.indexOf('?');
         return q >= 0 ? u.substring(0, q) : u;
+    }
+
+    private static String safeName(ChannelGroup g) {
+        return g == null || g.nome == null ? "unknown" : g.nome;
+    }
+
+    private static String safeId(ChannelGroup g) {
+        if (g == null || g.item() == null || g.item().id == null) return "unknown";
+        String id = g.item().id;
+        return id.length() > 12 ? id.substring(0, 12) : id;
+    }
+
+    private static String causeType(Throwable error) {
+        Throwable t = error;
+        for (int i = 0; t != null && i < 6; i++, t = t.getCause()) {
+            String n = t.getClass().getSimpleName();
+            if (n.contains("Http") || n.contains("Response") || n.contains("Parser")
+                    || n.contains("Decoder") || n.contains("DataSource")) return n;
+        }
+        return error == null ? "unknown" : error.getClass().getSimpleName();
     }
 
     private static String alternateFormat(String url) {

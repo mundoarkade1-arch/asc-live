@@ -19,23 +19,22 @@ final class Favorites {
 
     private static final int MAX = 500;
 
-    private static String owner = "";
+    private static final String PREFS = "asc_favs";
+    private static final String LEGACY_PROFILES = "asc_profiles";
+    private static String owner = "device";
     private static Set<String> keys;
 
     private Favorites() {
     }
 
     private static SharedPreferences prefs(Context c) {
-        return c.getApplicationContext().getSharedPreferences(
-                "asc_favs_" + Profiles.currentId(c), Context.MODE_PRIVATE);
+        return c.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
     private static void ensure(Context c) {
-        String id = Profiles.currentId(c);
-        if (id.equals(owner) && keys != null) {
+        if (keys != null) {
             return;
         }
-        owner = id;
         keys = new LinkedHashSet<>();
         try {
             String raw = Secure.reveal(prefs(c).getString("fav", ""));
@@ -48,6 +47,7 @@ final class Favorites {
         } catch (Exception ignored) {
             keys = new LinkedHashSet<>();
         }
+        migrateLegacy(c);
     }
 
     /** Esquece o que está em memória (trocou de perfil). */
@@ -90,5 +90,43 @@ final class Favorites {
     static synchronized List<String> all(Context c) {
         ensure(c);
         return new ArrayList<>(keys);
+    }
+
+    /** Migra favoritos antigos de todos os perfis para o unico espaco do ASC Live. */
+    private static void migrateLegacy(Context c) {
+        SharedPreferences p = prefs(c);
+        if (p.getBoolean("legacy_migrated", false)) return;
+        Set<String> ids = new LinkedHashSet<>();
+        ids.add("p1");
+        try {
+            JSONArray profiles = new JSONArray(c.getApplicationContext()
+                    .getSharedPreferences(LEGACY_PROFILES, Context.MODE_PRIVATE)
+                    .getString("list", "[]"));
+            for (int i = 0; i < profiles.length(); i++) {
+                String id = profiles.getJSONObject(i).optString("id", "");
+                if (!id.isEmpty()) ids.add(id);
+            }
+        } catch (Exception ignored) {
+            // Instalacoes novas nao tem dados legados.
+        }
+        for (String id : ids) {
+            try {
+                String raw = Secure.reveal(c.getApplicationContext()
+                        .getSharedPreferences("asc_favs_" + id, Context.MODE_PRIVATE)
+                        .getString("fav", ""));
+                JSONArray a = raw.isEmpty() ? new JSONArray() : new JSONArray(raw);
+                for (int i = 0; i < a.length() && keys.size() < MAX; i++) {
+                    keys.add(a.getString(i));
+                }
+            } catch (Exception ignored) {
+                // Um favorito legado corrompido nao impede os demais.
+            }
+        }
+        p.edit().putBoolean("legacy_migrated", true).apply();
+        if (!keys.isEmpty()) {
+            JSONArray a = new JSONArray();
+            for (String k : keys) a.put(k);
+            p.edit().putString("fav", Secure.seal(a.toString())).apply();
+        }
     }
 }

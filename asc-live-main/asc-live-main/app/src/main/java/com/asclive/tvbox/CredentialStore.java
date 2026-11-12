@@ -8,6 +8,8 @@ import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.util.Base64;
 
+import org.json.JSONArray;
+
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.util.ArrayList;
@@ -100,13 +102,7 @@ public final class CredentialStore {
         if (single.getString("mode", null) != null) {
             return;
         }
-        List<String> ids = new ArrayList<>();
-        ids.add(Profiles.currentId(context));
-        for (Profiles.P p : Profiles.list(context)) {
-            if (!ids.contains(p.id)) {
-                ids.add(p.id);
-            }
-        }
+        List<String> ids = legacyProfileIds(context);
         for (String id : ids) {
             SharedPreferences old = app.getSharedPreferences(LEGACY_PREFIX + id,
                     Context.MODE_PRIVATE);
@@ -123,6 +119,23 @@ public final class CredentialStore {
                     .commit();
             return;
         }
+    }
+
+    private static List<String> legacyProfileIds(Context context) {
+        List<String> ids = new ArrayList<>();
+        ids.add("p1");
+        try {
+            JSONArray a = new JSONArray(context.getApplicationContext()
+                    .getSharedPreferences("asc_profiles", Context.MODE_PRIVATE)
+                    .getString("list", "[]"));
+            for (int i = 0; i < a.length(); i++) {
+                String id = a.getJSONObject(i).optString("id", "");
+                if (id.matches("[a-z0-9]{1,12}") && !ids.contains(id)) ids.add(id);
+            }
+        } catch (Exception ignored) {
+            // InstalaÃ§Ãµes novas nÃ£o tÃªm dados legados.
+        }
+        return ids;
     }
 
     /** Apaga o arquivo de login antigo de um perfil (usado ao excluir o perfil). */

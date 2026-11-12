@@ -18,7 +18,6 @@ import java.util.List;
  */
 final class Sidebar extends LinearLayout {
 
-    static final int PROFILE = 0;
     static final int FAVORITES = 1;
     static final int SEARCH = 2;
     static final int FOOTBALL = 3;
@@ -74,8 +73,7 @@ final class Sidebar extends LinearLayout {
         slp.setMargins(Ui.dp(c, 16), Ui.dp(c, Ui.TOP_BAR_DP), 0, Ui.dp(c, Ui.HINT_BAR_DP + 12));
         setLayoutParams(slp);
 
-        addProfile(c, profileName, profileAvatar);
-        addGap(c, 14);
+        addGap(c, 8);
         addRow(c, HOME, R.drawable.ic_play, "Início");
         addRow(c, LIVE, R.drawable.ic_tv, "Canais");
         addRow(c, FOOTBALL, R.drawable.ic_play, "Esportes");
@@ -182,25 +180,6 @@ final class Sidebar extends LinearLayout {
             return true;
         });
         return row;
-    }
-
-    private void addProfile(Context c, String name, int avatarIdx) {
-        LinearLayout row = makeRow(c, PROFILE);
-        View marker = new View(c);
-        marker.setVisibility(INVISIBLE);
-        row.addView(marker, new LayoutParams(Ui.dp(c, 3), Ui.dp(c, 3)));
-        ImageView av = new ImageView(c);
-        av.setImageResource(Profiles.avatarRes(avatarIdx));
-        av.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        LayoutParams alp = new LayoutParams(Ui.dp(c, 40), Ui.dp(c, 40));
-        alp.leftMargin = Ui.dp(c, 9);
-        row.addView(av, alp);
-        TextView label = Ui.text(c, name, 18, C.TEXT);
-        label.setVisibility(VISIBLE);
-        LayoutParams llp = new LayoutParams(0, -2, 1f);
-        llp.leftMargin = Ui.dp(c, 14);
-        row.addView(label, llp);
-        rows.add(new Row(PROFILE, row, marker, null, label, av));
     }
 
     private void addRow(Context c, int id, int iconRes, String text) {

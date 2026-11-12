@@ -388,10 +388,12 @@ public final class XtreamApi {
         if (item.url != null && !item.url.isEmpty()) {
             return item.url;
         }
-        String base = server + "/";
+        // O login pode ter sido salvo com uma ou mais barras no fim. Duas barras antes de
+        // /live fazem alguns servidores responderem 404, embora a lista/API funcione.
+        String base = server == null ? "" : server.replaceAll("/+$", "");
         String u = Uri.encode(user) + "/" + Uri.encode(pass) + "/";
         // .ts é o formato ao vivo mais compatível entre servidores Xtream.
-        return base + "live/" + u + item.id + ".ts";
+        return base + "/live/" + u + item.id + ".m3u8";
     }
 
     // ---------- Leitura de um canal ----------

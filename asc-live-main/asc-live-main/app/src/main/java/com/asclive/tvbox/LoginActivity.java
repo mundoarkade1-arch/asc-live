@@ -291,15 +291,8 @@ public class LoginActivity extends Activity {
      */
     private void enter() {
         Catalog.invalidate();
-        Intent i;
-        if (switching) {
-            i = new Intent(this, ShellActivity.class);
-            i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        } else if (Profiles.needsWelcome(this)) {
-            i = new Intent(this, ProfilesActivity.class).putExtra("welcome", true);
-        } else {
-            i = new Intent(this, ProfilesActivity.class).putExtra("pick", true);
-        }
+        Intent i = new Intent(this, ShellActivity.class);
+        if (switching) i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(i);
         finish();
     }

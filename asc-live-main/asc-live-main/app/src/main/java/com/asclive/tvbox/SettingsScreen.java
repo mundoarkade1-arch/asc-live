@@ -59,8 +59,7 @@ final class SettingsScreen extends Screen {
         firstRow = null;
         col.addView(Ui.title(act, "Ajustes", 34, C.TEXT));
 
-        section("Perfil e lista");
-        row("Perfis", Profiles.current(act).name, this::openProfiles);
+        section("Lista e aparelho");
         row("Trocar de lista", "Vale para todos", () -> Dialogs.confirm(act, "Trocar de lista",
                 "A lista é uma só para o aparelho. Se você trocar, ela muda para TODOS os "
                         + "perfis. Os favoritos e o que cada perfil já assistiu continuam.",
@@ -150,12 +149,6 @@ final class SettingsScreen extends Screen {
     }
 
     // ---------- Perfis ----------
-
-    private void openProfiles() {
-        Intent i = new Intent(act, ProfilesActivity.class);
-        i.putExtra("manage", true);
-        act.startActivity(i);
-    }
 
     // ---------- Controle parental e senha do app ----------
 

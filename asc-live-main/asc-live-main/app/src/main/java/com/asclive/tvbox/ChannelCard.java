@@ -128,7 +128,7 @@ final class ChannelCard extends FrameLayout {
 
     void bind(ChannelGroup g, boolean favorite) {
         title.setText(g.nome);
-        initial.setText(Profiles.initial(g.nome));
+        initial.setText(initialOf(g.nome));
         ImageLoader.load(image, g.logo, 320);
         // Cada canal tem a sua resolução: o selo mostra qual é (FHD, HD, SD, 4K).
         String label = g.variants.get(0).label();
@@ -142,6 +142,11 @@ final class ChannelCard extends FrameLayout {
         setScaleX(1f);
         setScaleY(1f);
         setTranslationZ(0f);
+    }
+
+    private static String initialOf(String name) {
+        if (name == null || name.trim().isEmpty()) return "?";
+        return name.trim().substring(0, 1).toUpperCase();
     }
 
     void showFocus(boolean on) {
