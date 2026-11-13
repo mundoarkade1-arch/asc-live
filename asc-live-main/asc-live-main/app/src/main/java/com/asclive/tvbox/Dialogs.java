@@ -126,7 +126,7 @@ final class Dialogs {
         box.addView(Ui.title(a, title, 24, C.TEXT));
         android.widget.ListView lv = new android.widget.ListView(a);
         lv.setDivider(null);
-        lv.setSelector(Ui.shape(0x00000000, Ui.dp(a, 12), C.ACCENT, Ui.dp(a, 2)));
+        lv.setSelector(Ui.shape(0x00000000, Ui.dp(a, 12), C.GOLD, Ui.dp(a, 2)));
         lv.setDrawSelectorOnTop(true);
         lv.setVerticalScrollBarEnabled(false);
         lv.setAdapter(new android.widget.BaseAdapter() {

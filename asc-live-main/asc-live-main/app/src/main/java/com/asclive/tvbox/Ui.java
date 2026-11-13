@@ -162,7 +162,7 @@ final class Ui {
                                      int stroke, int strokePx) {
         float r = dp(c, radiusDp);
         StateListDrawable s = new StateListDrawable();
-        GradientDrawable on = shape(fillFocus, r, C.ACCENT, dp(c, 3));
+        GradientDrawable on = shape(fillFocus, r, C.GOLD, dp(c, 3));
         s.addState(new int[]{android.R.attr.state_focused}, on);
         s.addState(new int[]{android.R.attr.state_pressed}, on);
         s.addState(new int[]{}, shape(fill, r, stroke, strokePx));

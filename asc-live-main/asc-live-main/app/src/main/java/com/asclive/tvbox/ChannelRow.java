@@ -62,7 +62,7 @@ final class ChannelRow extends LinearLayout {
         wlp.leftMargin = Ui.dp(c, 12);
         addView(words, wlp);
 
-        star = Ui.pill(c, "\u2605", 14, 0x00000000, C.GLOW);
+        star = Ui.pill(c, "\u2605", 14, 0x00000000, C.GOLD);
         star.setVisibility(GONE);
         addView(star);
 
@@ -72,7 +72,7 @@ final class ChannelRow extends LinearLayout {
         blp.leftMargin = Ui.dp(c, 8);
         addView(badge, blp);
 
-        play = Ui.icon(c, R.drawable.ic_play, 22, C.ACCENT);
+        play = Ui.icon(c, R.drawable.ic_play, 22, C.GOLD);
         LayoutParams plp = new LayoutParams(Ui.dp(c, 22), Ui.dp(c, 22));
         plp.leftMargin = Ui.dp(c, 12);
         addView(play, plp);

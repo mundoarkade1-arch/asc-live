@@ -173,7 +173,7 @@ final class EpgDialog {
             int value = (int) Math.max(0L, Math.min(1000L,
                     (now - current.start) * 1000L / total));
             progress.setProgress(value);
-            progress.setProgressTintList(android.content.res.ColorStateList.valueOf(C.ACCENT));
+            progress.setProgressTintList(android.content.res.ColorStateList.valueOf(C.GOLD));
             progress.setProgressBackgroundTintList(
                     android.content.res.ColorStateList.valueOf(0x33FFFFFF));
             LinearLayout.LayoutParams plp = new LinearLayout.LayoutParams(-1, Ui.dp(act, 6));

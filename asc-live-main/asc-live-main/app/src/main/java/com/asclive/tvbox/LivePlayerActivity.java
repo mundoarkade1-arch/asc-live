@@ -222,7 +222,7 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
         panelList = new ListView(this);
         panelList.setDivider(null);
         panelList.setVerticalScrollBarEnabled(false);
-        panelList.setSelector(Ui.shape(C.SURFACE_FOCUS, Ui.dp(this, 12), C.ACCENT, Ui.dp(this, 2)));
+        panelList.setSelector(Ui.shape(C.SURFACE_FOCUS, Ui.dp(this, 12), C.GOLD, Ui.dp(this, 2)));
         panelList.setDrawSelectorOnTop(false);
         panelList.setAdapter(new PanelAdapter());
         panelList.setOnItemClickListener((parent, view, position, id) -> {

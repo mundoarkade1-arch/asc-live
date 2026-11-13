@@ -186,7 +186,7 @@ final class Sidebar extends LinearLayout {
     private void addRow(Context c, int id, int iconRes, String text) {
         LinearLayout row = makeRow(c, id);
         View marker = new View(c);
-        marker.setBackground(Ui.shape(C.GLOW, Ui.dp(c, 2), 0, 0));
+        marker.setBackground(Ui.shape(C.GOLD, Ui.dp(c, 2), 0, 0));
         marker.setVisibility(INVISIBLE);
         row.addView(marker, new LayoutParams(Ui.dp(c, 4), Ui.dp(c, 28)));
         ImageView icon = new ImageView(c);
@@ -210,9 +210,9 @@ final class Sidebar extends LinearLayout {
             boolean on = r.id == id;
             r.marker.setVisibility(on ? VISIBLE : INVISIBLE);
             if (r.icon != null) {
-                r.icon.setColorFilter(on ? C.GLOW : C.TEXT);
+                r.icon.setColorFilter(on ? C.GOLD : C.TEXT);
             }
-            r.label.setTextColor(C.TEXT);
+            r.label.setTextColor(on ? C.GOLD : C.TEXT);
             r.label.setTypeface(on ? Ui.bold(getContext()) : android.graphics.Typeface.DEFAULT);
         }
     }

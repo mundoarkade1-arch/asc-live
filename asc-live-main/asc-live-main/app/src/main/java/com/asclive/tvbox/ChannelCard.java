@@ -82,14 +82,14 @@ final class ChannelCard extends FrameLayout {
         bl.setMargins(0, Ui.dp(c, 8), Ui.dp(c, 8), 0);
         poster.addView(badge, bl);
 
-        star = Ui.pill(c, "\u2605", 14, 0xCC03231F, C.GLOW);
+        star = Ui.pill(c, "\u2605", 14, 0xCC03231F, C.GOLD);
         LayoutParams sl = new LayoutParams(-2, -2);
         sl.gravity = Gravity.TOP | Gravity.START;
         sl.setMargins(Ui.dp(c, 8), Ui.dp(c, 8), 0, 0);
         poster.addView(star, sl);
 
         outline = new View(c);
-        outline.setBackground(Ui.shape(0x00000000, r, C.ACCENT, Ui.dp(c, 3)));
+        outline.setBackground(Ui.shape(0x00000000, r, C.GOLD, Ui.dp(c, 3)));
         outline.setVisibility(View.INVISIBLE);
         addView(outline, new LayoutParams(pw, ph));
 

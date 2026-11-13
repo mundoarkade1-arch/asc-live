@@ -302,7 +302,7 @@ final class FootballScreen extends Screen {
         LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(0, -2, 1f);
         nlp.leftMargin = Ui.dp(act, 10);
         row.addView(name, nlp);
-        TextView play = Ui.text(act, "▶", 20, C.GLOW);
+        TextView play = Ui.text(act, "▶", 20, C.GOLD);
         row.addView(play, new LinearLayout.LayoutParams(Ui.dp(act, 34), -2));
         target.addView(row, new LinearLayout.LayoutParams(-1, Ui.dp(act, 54)));
         row.setOnClickListener(v -> play(channel));
