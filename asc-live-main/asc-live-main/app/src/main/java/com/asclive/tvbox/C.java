@@ -13,8 +13,8 @@ final class C {
     // 10% - destaque (botão principal, item selecionado, barra de progresso, ao vivo)
     static final int ACCENT = 0xFF0E9F7E;
     static final int ACCENT_40 = 0x660E9F7E;
-    // Brilho suave: SÓ em pequenos indicadores (ícone selecionado, marcador, estrela)
-    static final int GLOW = 0xFF35D6AE;
+    // Dourado suave: SÓ em pequenos indicadores (ícone selecionado, marcador, estrela)
+    static final int GLOW = 0xFFD4B06A;
     // Texto
     static final int TEXT = 0xFFFFFFFF;
     static final int TEXT2 = 0xFFB5CFCA;
