@@ -3,8 +3,8 @@
     <!-- Paleta ASC Live: 70% fundo, 20% secundária, 10% destaque -->
     <color name="asc_bg">#03231F</color>
     <color name="asc_surface">#0A3A33</color>
-    <color name="asc_surface_focus">#0F4B42</color>
-    <color name="asc_accent">#0E9F7E</color>
+    <color name="asc_surface_focus">#D4B06A</color>
+    <color name="asc_accent">#D4B06A</color>
     <color name="asc_glow">#D4B06A</color>
     <color name="asc_white">#FFFFFF</color>
     <color name="asc_text2">#B5CFCA</color>

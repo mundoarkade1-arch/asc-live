@@ -9,10 +9,10 @@ final class C {
     static final int BG = 0xFF03231F;
     // 20% - cards, barras e menus (um pouco mais claros que o fundo)
     static final int SURFACE = 0xFF0A3A33;
-    static final int SURFACE_FOCUS = 0xFF0F4B42;
+    static final int SURFACE_FOCUS = 0xFFD4B06A;
     // 10% - destaque (botão principal, item selecionado, barra de progresso, ao vivo)
-    static final int ACCENT = 0xFF0E9F7E;
-    static final int ACCENT_40 = 0x660E9F7E;
+    static final int ACCENT = 0xFFD4B06A;
+    static final int ACCENT_40 = 0x66D4B06A;
     // Dourado suave: SÓ em pequenos indicadores (ícone selecionado, marcador, estrela)
     static final int GLOW = 0xFFD4B06A;
     // Texto
@@ -26,7 +26,7 @@ final class C {
     static final int SHADE = 0xE6031A17;
     /** Cards: um pouco mais claros que o fundo, com borda sutil. */
     static final int GLASS = 0xF20A3A33;
-    static final int GLASS_HI = 0xFF0F4B42;
+    static final int GLASS_HI = 0xFFD4B06A;
     static final int GLASS_EDGE = 0x14FFFFFF;
     /** Menus e janelas. */
     static final int MENU = 0xF00A3A33;
