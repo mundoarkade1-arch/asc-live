@@ -137,12 +137,12 @@ final class Ui {
         int strokePx;
         if (style == PRIMARY) {
             fill = C.ACCENT;
-            textColor = C.BG;
+            textColor = C.TEXT;
             stroke = C.ACCENT;
             strokePx = 0;
         } else if (style == ACCENT) {
             fill = C.ACCENT;
-            textColor = C.BG;
+            textColor = C.TEXT;
             stroke = C.ACCENT;
             strokePx = 0;
         } else {
@@ -151,13 +151,7 @@ final class Ui {
             stroke = C.LINE;
             strokePx = dp(c, 1);
         }
-        if (style == DARK) {
-            b.setTextColor(new android.content.res.ColorStateList(
-                    new int[][]{{android.R.attr.state_focused}, {android.R.attr.state_pressed}, {}},
-                    new int[]{C.BG, C.BG, textColor}));
-        } else {
-            b.setTextColor(textColor);
-        }
+        b.setTextColor(textColor);
         b.setBackground(focusBg(c, fill, style == DARK ? C.SURFACE_FOCUS : fill, 14, stroke,
                 strokePx));
         return b;
