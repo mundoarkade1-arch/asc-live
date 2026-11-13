@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Paleta base (imagem de referência do dono) -->
-    <color name="asc_bg">#101010</color>
+    <!-- Paleta ASC Live: 70% fundo, 20% secundária, 10% destaque -->
+    <color name="asc_bg">#03231F</color>
+    <color name="asc_surface">#0A3A33</color>
+    <color name="asc_surface_focus">#0F4B42</color>
+    <color name="asc_accent">#0E9F7E</color>
+    <color name="asc_glow">#35D6AE</color>
     <color name="asc_white">#FFFFFF</color>
-    <color name="asc_lime">#00D9FF</color>
-    <!-- Cores derivadas (profundidade) -->
-    <color name="asc_surface">#222222</color>
-    <color name="asc_surface_focus">#2A2A2A</color>
-    <color name="asc_text2">#A8A8A8</color>
-    <color name="asc_text3">#6B6B6B</color>
-    <color name="asc_line">#2A2A2A</color>
-    <color name="asc_error">#FF8A8A</color>
-    <!-- Ícone do app -->
-    <color name="ic_launcher_background">#101010</color>
+    <color name="asc_text2">#B5CFCA</color>
+    <color name="asc_text3">#86A8A1</color>
+    <color name="asc_line">#14FFFFFF</color>
+    <color name="asc_error">#E58C8C</color>
+    <!-- Ícone do app (degradê) -->
+    <color name="ic_launcher_bg_start">#18AC89</color>
+    <color name="ic_launcher_bg_end">#03231F</color>
 </resources>

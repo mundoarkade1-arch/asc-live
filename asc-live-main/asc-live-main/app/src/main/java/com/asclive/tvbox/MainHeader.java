@@ -32,7 +32,7 @@ final class MainHeader extends LinearLayout {
         setOrientation(HORIZONTAL);
         setGravity(Gravity.CENTER_VERTICAL);
         setPadding(Ui.dp(c, 22), Ui.dp(c, 8), Ui.dp(c, 22), Ui.dp(c, 8));
-        setBackground(Ui.shape(C.BG, 0, 0, 0));
+        setBackground(Ui.shape(0x00000000, 0, 0, 0));
 
         TextView brand = Ui.title(c, "ASC LIVE", 24, C.TEXT);
         brand.setTypeface(Ui.bold(c), Typeface.BOLD);
@@ -50,7 +50,7 @@ final class MainHeader extends LinearLayout {
         searchLp.rightMargin = Ui.dp(c, 22);
         addView(search, searchLp);
 
-        ImageView wifi = Ui.icon(c, R.drawable.ic_refresh, 20, C.LIME);
+        ImageView wifi = Ui.icon(c, R.drawable.ic_refresh, 20, C.ACCENT);
         addView(wifi, new LayoutParams(Ui.dp(c, 28), Ui.dp(c, 28)));
 
         LinearLayout time = new LinearLayout(c);

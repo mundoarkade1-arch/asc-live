@@ -33,7 +33,7 @@ final class Dialogs {
             w.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
         }
         box.setOrientation(LinearLayout.VERTICAL);
-        box.setBackground(Ui.shape(C.SMOKE_DEEP, Ui.dp(a, 20), C.GLASS_EDGE, Ui.dp(a, 1)));
+        box.setBackground(Ui.shape(C.SMOKE_DEEP, Ui.dp(a, 16), C.GLASS_EDGE, Ui.dp(a, 1)));
         int p = Ui.dp(a, 28);
         box.setPadding(p, p, p, p);
         ScrollView sv = new ScrollView(a);
@@ -120,13 +120,13 @@ final class Dialogs {
         }
         LinearLayout box = new LinearLayout(a);
         box.setOrientation(LinearLayout.VERTICAL);
-        box.setBackground(Ui.shape(C.SMOKE_DEEP, Ui.dp(a, 20), C.GLASS_EDGE, Ui.dp(a, 1)));
+        box.setBackground(Ui.shape(C.SMOKE_DEEP, Ui.dp(a, 16), C.GLASS_EDGE, Ui.dp(a, 1)));
         int p = Ui.dp(a, 24);
         box.setPadding(p, p, p, p);
         box.addView(Ui.title(a, title, 24, C.TEXT));
         android.widget.ListView lv = new android.widget.ListView(a);
         lv.setDivider(null);
-        lv.setSelector(Ui.shape(0x00000000, Ui.dp(a, 10), C.LIME, Ui.dp(a, 2)));
+        lv.setSelector(Ui.shape(0x00000000, Ui.dp(a, 12), C.ACCENT, Ui.dp(a, 2)));
         lv.setDrawSelectorOnTop(true);
         lv.setVerticalScrollBarEnabled(false);
         lv.setAdapter(new android.widget.BaseAdapter() {

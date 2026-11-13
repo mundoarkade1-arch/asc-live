@@ -3,7 +3,7 @@
     <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/asc_bg</item>
         <item name="android:colorBackground">@color/asc_bg</item>
-        <item name="android:colorAccent">@color/asc_lime</item>
+        <item name="android:colorAccent">@color/asc_accent</item>
         <item name="android:colorPrimary">@color/asc_bg</item>
         <item name="android:textColorPrimary">@color/asc_white</item>
         <item name="android:windowAnimationStyle">@style/ScreenAnim</item>

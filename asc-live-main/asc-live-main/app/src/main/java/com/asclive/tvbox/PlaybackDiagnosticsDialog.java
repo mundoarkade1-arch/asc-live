@@ -31,7 +31,7 @@ final class PlaybackDiagnosticsDialog {
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(Ui.dp(activity, 28), Ui.dp(activity, 24),
                 Ui.dp(activity, 28), Ui.dp(activity, 24));
-        box.setBackground(Ui.shape(C.SMOKE_DEEP, Ui.dp(activity, 20),
+        box.setBackground(Ui.shape(C.SMOKE_DEEP, Ui.dp(activity, 16),
                 C.GLASS_EDGE, Ui.dp(activity, 1)));
         box.addView(Ui.title(activity, "Diagnóstico de reprodução", 24, C.TEXT));
 

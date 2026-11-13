@@ -169,7 +169,7 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
         infoBar.setOrientation(LinearLayout.HORIZONTAL);
         infoBar.setGravity(Gravity.CENTER_VERTICAL);
         // Vidro: escuro e transparente, o canal continua aparecendo por trás.
-        infoBar.setBackgroundColor(0x88101010);
+        infoBar.setBackgroundColor(0xAA03231F);
         infoBar.setPadding(Ui.dp(this, 44), Ui.dp(this, 24), Ui.dp(this, 44), Ui.dp(this, 26));
         infoNumber = Ui.title(this, "", 40, C.TEXT);
         infoNumber.setShadowLayer(6f, 0f, 1f, 0xFF000000);
@@ -217,12 +217,12 @@ public class LivePlayerActivity extends Activity implements LivePlayer.Listener 
 
         // Lista rápida de canais (OK).
         panel = new FrameLayout(this);
-        panel.setBackgroundColor(0xEE101010);
+        panel.setBackgroundColor(0xF203231F);
         panel.setPadding(Ui.dp(this, 16), Ui.dp(this, 20), Ui.dp(this, 16), Ui.dp(this, 20));
         panelList = new ListView(this);
         panelList.setDivider(null);
         panelList.setVerticalScrollBarEnabled(false);
-        panelList.setSelector(Ui.shape(C.SURFACE_FOCUS, Ui.dp(this, 10), C.LIME, Ui.dp(this, 2)));
+        panelList.setSelector(Ui.shape(C.SURFACE_FOCUS, Ui.dp(this, 12), C.ACCENT, Ui.dp(this, 2)));
         panelList.setDrawSelectorOnTop(false);
         panelList.setAdapter(new PanelAdapter());
         panelList.setOnItemClickListener((parent, view, position, id) -> {

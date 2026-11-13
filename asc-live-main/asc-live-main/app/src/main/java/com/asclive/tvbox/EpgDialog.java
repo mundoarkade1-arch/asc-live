@@ -35,8 +35,8 @@ final class EpgDialog {
     /** Cinza claro para textos de apoio sobre o vidro (o cinza comum some em cima do vídeo). */
     private static final int SOFT = 0xFFE6E6E6;
     /** Vidro: escuro e transparente, deixa o canal aparecer, mas segura a leitura. */
-    private static final int GLASS_FILL = 0x99101010;
-    private static final int GLASS_BORDER = 0x55FFFFFF;
+    private static final int GLASS_FILL = 0xF20A3A33;
+    private static final int GLASS_BORDER = 0x14FFFFFF;
     private static final int SHADOW = 0xFF000000;
 
     private EpgDialog() {
@@ -173,9 +173,9 @@ final class EpgDialog {
             int value = (int) Math.max(0L, Math.min(1000L,
                     (now - current.start) * 1000L / total));
             progress.setProgress(value);
-            progress.setProgressTintList(android.content.res.ColorStateList.valueOf(C.LIME));
+            progress.setProgressTintList(android.content.res.ColorStateList.valueOf(C.ACCENT));
             progress.setProgressBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf(0x44FFFFFF));
+                    android.content.res.ColorStateList.valueOf(0x33FFFFFF));
             LinearLayout.LayoutParams plp = new LinearLayout.LayoutParams(-1, Ui.dp(act, 6));
             plp.topMargin = Ui.dp(act, 4);
             rows.addView(progress, plp);

@@ -19,7 +19,7 @@ final class Ui {
 
     static final int PRIMARY = 0;
     static final int DARK = 1;
-    static final int LIME = 2;
+    static final int ACCENT = 2;
 
     /** Alturas e larguras fixas do quadro principal (em dp). */
     static final int TOP_BAR_DP = 68;
@@ -60,10 +60,18 @@ final class Ui {
     }
 
     /**
-     * Fundo do app: degradê escuro com um brilho limão suave no canto. Os painéis de vidro
-     * (transparentes) ficam por cima dele. Sem imagem e sem blur: leve para TV Box antigo.
+     * Fundo do app: imagem 06_ASC_Live_fundo (verde bem escuro com luz suave no canto
+     * inferior direito). Os cards ficam por cima. Se a imagem falhar, usa a cor lisa #03231F.
      */
     static Drawable appBackground(Context c) {
+        try {
+            Drawable d = androidx.core.content.ContextCompat.getDrawable(c, R.drawable.bg_asc_live);
+            if (d != null) {
+                return d;
+            }
+        } catch (Exception ignored) {
+            // cai para a cor lisa
+        }
         return shape(C.BG, 0, 0, 0);
     }
 
@@ -112,7 +120,7 @@ final class Ui {
         return v;
     }
 
-    /** Botão que recebe foco. style: PRIMARY (branco), DARK (escuro com borda) ou LIME. */
+    /** Botão que recebe foco. style: PRIMARY/ACCENT (verde de destaque) ou DARK (card com borda). */
     static TextView button(Context c, CharSequence label, int style) {
         TextView b = new TextView(c);
         b.setText(label);
@@ -128,14 +136,14 @@ final class Ui {
         int stroke;
         int strokePx;
         if (style == PRIMARY) {
-            fill = C.TEXT;
-            textColor = C.BG;
-            stroke = C.TEXT;
+            fill = C.ACCENT;
+            textColor = C.TEXT;
+            stroke = C.ACCENT;
             strokePx = 0;
-        } else if (style == LIME) {
-            fill = C.LIME;
-            textColor = C.BG;
-            stroke = C.LIME;
+        } else if (style == ACCENT) {
+            fill = C.ACCENT;
+            textColor = C.TEXT;
+            stroke = C.ACCENT;
             strokePx = 0;
         } else {
             fill = C.SURFACE;
@@ -149,12 +157,12 @@ final class Ui {
         return b;
     }
 
-    /** Fundo com contorno limão quando recebe foco. */
+    /** Fundo com contorno de destaque quando recebe foco. */
     static StateListDrawable focusBg(Context c, int fill, int fillFocus, float radiusDp,
                                      int stroke, int strokePx) {
         float r = dp(c, radiusDp);
         StateListDrawable s = new StateListDrawable();
-        GradientDrawable on = shape(fillFocus, r, C.LIME, dp(c, 3));
+        GradientDrawable on = shape(fillFocus, r, C.ACCENT, dp(c, 3));
         s.addState(new int[]{android.R.attr.state_focused}, on);
         s.addState(new int[]{android.R.attr.state_pressed}, on);
         s.addState(new int[]{}, shape(fill, r, stroke, strokePx));
@@ -172,10 +180,10 @@ final class Ui {
         return s;
     }
 
-    /** Retângulo limão com texto preto (como "3D" na página de referência). */
+    /** Etiqueta de destaque (ex.: AO VIVO): fundo verde, texto escuro. */
     static TextView limeTag(Context c, CharSequence t) {
         TextView v = title(c, t, 13, C.BG);
-        v.setBackground(shape(C.LIME, dp(c, 6), 0, 0));
+        v.setBackground(shape(C.ACCENT, dp(c, 6), 0, 0));
         v.setPadding(dp(c, 10), dp(c, 4), dp(c, 10), dp(c, 4));
         return v;
     }
@@ -197,7 +205,7 @@ final class Ui {
         return v;
     }
 
-    /** Pinta uma parte do texto (como "assistindo" em limão). */
+    /** Pinta uma parte do texto na cor de destaque. */
     static CharSequence highlight(String full, String part, int color) {
         android.text.SpannableString sp = new android.text.SpannableString(full);
         int i = full.indexOf(part);

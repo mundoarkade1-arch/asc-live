@@ -31,7 +31,7 @@ final class SearchScreen extends GroupGridScreen {
         top.setGravity(android.view.Gravity.CENTER_VERTICAL);
         top.setPadding(Ui.dp(act, 36), Ui.dp(act, 22), Ui.dp(act, 36), Ui.dp(act, 6));
         top.addView(Ui.title(act, "Buscar canal", 34, C.TEXT));
-        button = Ui.button(act, "Digitar", Ui.LIME);
+        button = Ui.button(act, "Digitar", Ui.ACCENT);
         LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(-2, -2);
         blp.leftMargin = Ui.dp(act, 28);
         top.addView(button, blp);

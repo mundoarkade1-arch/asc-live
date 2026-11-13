@@ -42,11 +42,11 @@ final class LoadingSpinner extends View {
         float w = Ui.dp(c, 5);
         track.setStyle(Paint.Style.STROKE);
         track.setStrokeWidth(w);
-        track.setColor(0x33FFFFFF);
+        track.setColor(C.TRACK);
         arc.setStyle(Paint.Style.STROKE);
         arc.setStrokeWidth(w);
         arc.setStrokeCap(Paint.Cap.ROUND);
-        arc.setColor(C.LIME);
+        arc.setColor(C.ACCENT);
     }
 
     private void update() {

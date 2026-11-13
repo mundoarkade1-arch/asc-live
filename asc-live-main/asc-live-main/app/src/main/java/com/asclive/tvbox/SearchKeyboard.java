@@ -32,9 +32,9 @@ public final class SearchKeyboard {
     }
 
     private static final int COLOR_WHITE = 0xFFFFFFFF;
-    private static final int COLOR_NEUTRAL = 0xFFA8A8A8;
-    private static final int COLOR_ERROR = 0xFFFF5C5C;
-    private static final int COLOR_BACK = 0xFF101010;
+    private static final int COLOR_NEUTRAL = C.TEXT2;
+    private static final int COLOR_ERROR = C.ERROR;
+    private static final int COLOR_BACK = C.BG;
     private static final int MAX_LEN = 40;
 
     private final Activity activity;

@@ -96,7 +96,7 @@ final class LiveScreen extends Screen {
         catList.setDivider(null);
         catList.setDividerHeight(Ui.dp(act, 4));
         catList.setVerticalScrollBarEnabled(false);
-        catList.setSelector(Ui.shape(0x00000000, Ui.dp(act, 12), C.LIME, Ui.dp(act, 2)));
+        catList.setSelector(Ui.shape(0x00000000, Ui.dp(act, 12), C.ACCENT, Ui.dp(act, 2)));
         catList.setDrawSelectorOnTop(true);
         catList.setClipToPadding(false);
         catList.setPadding(Ui.dp(act, 10), Ui.dp(act, 12), Ui.dp(act, 10), Ui.dp(act, 12));
@@ -134,7 +134,7 @@ final class LiveScreen extends Screen {
         grid.setNumColumns(1);
         grid.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
         grid.setVerticalSpacing(Ui.dp(act, 8));
-        grid.setSelector(Ui.shape(0x00000000, Ui.dp(act, 14), C.LIME, Ui.dp(act, 3)));
+        grid.setSelector(Ui.shape(0x00000000, Ui.dp(act, 14), C.ACCENT, Ui.dp(act, 3)));
         grid.setDrawSelectorOnTop(true);
         grid.setPadding(Ui.dp(act, 4), Ui.dp(act, 4), Ui.dp(act, 4), Ui.dp(act, 12));
         grid.setAdapter(adapter);
@@ -213,9 +213,9 @@ final class LiveScreen extends Screen {
         prog.addView(dTime, new LinearLayout.LayoutParams(-1, -2));
         dBar = new LinearLayout(act);
         dBar.setOrientation(LinearLayout.HORIZONTAL);
-        dBar.setBackground(Ui.shape(0x33FFFFFF, Ui.dp(act, 3), 0, 0));
+        dBar.setBackground(Ui.shape(C.TRACK, Ui.dp(act, 3), 0, 0));
         dFill = new View(act);
-        dFill.setBackground(Ui.shape(C.LIME, Ui.dp(act, 3), 0, 0));
+        dFill.setBackground(Ui.shape(C.ACCENT, Ui.dp(act, 3), 0, 0));
         dRest = new View(act);
         dBar.addView(dFill, new LinearLayout.LayoutParams(0, -1, 0f));
         dBar.addView(dRest, new LinearLayout.LayoutParams(0, -1, 100f));

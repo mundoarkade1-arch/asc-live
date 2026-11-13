@@ -67,7 +67,8 @@ final class Sidebar extends LinearLayout {
         narrow = Ui.dp(c, Ui.SIDEBAR_DP);
         wide = narrow;
         setOrientation(VERTICAL);
-        setBackground(Ui.shape(0x66000000, Ui.dp(c, 22), C.GLASS_EDGE, Ui.dp(c, 1)));
+        setBackground(Ui.shape(C.MENU, Ui.dp(c, 16), C.GLASS_EDGE, Ui.dp(c, 1)));
+        setElevation(Ui.dp(c, 8));
         setPadding(0, Ui.dp(c, 18), 0, Ui.dp(c, 18));
         FrameLayout.LayoutParams slp = new FrameLayout.LayoutParams(narrow, -1);
         slp.setMargins(Ui.dp(c, 16), Ui.dp(c, Ui.TOP_BAR_DP), 0, Ui.dp(c, Ui.HINT_BAR_DP + 12));
@@ -185,7 +186,7 @@ final class Sidebar extends LinearLayout {
     private void addRow(Context c, int id, int iconRes, String text) {
         LinearLayout row = makeRow(c, id);
         View marker = new View(c);
-        marker.setBackground(Ui.shape(C.LIME, Ui.dp(c, 2), 0, 0));
+        marker.setBackground(Ui.shape(C.GLOW, Ui.dp(c, 2), 0, 0));
         marker.setVisibility(INVISIBLE);
         row.addView(marker, new LayoutParams(Ui.dp(c, 4), Ui.dp(c, 28)));
         ImageView icon = new ImageView(c);
@@ -209,7 +210,7 @@ final class Sidebar extends LinearLayout {
             boolean on = r.id == id;
             r.marker.setVisibility(on ? VISIBLE : INVISIBLE);
             if (r.icon != null) {
-                r.icon.setColorFilter(on ? C.LIME : C.TEXT);
+                r.icon.setColorFilter(on ? C.GLOW : C.TEXT);
             }
             r.label.setTextColor(C.TEXT);
             r.label.setTypeface(on ? Ui.bold(getContext()) : android.graphics.Typeface.DEFAULT);

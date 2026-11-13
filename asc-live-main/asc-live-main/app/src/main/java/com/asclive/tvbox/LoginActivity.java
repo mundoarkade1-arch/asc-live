@@ -51,7 +51,7 @@ public class LoginActivity extends Activity {
 
     private void build() {
         ScrollView sv = new ScrollView(this);
-        sv.setBackgroundColor(C.BG);
+        sv.setBackground(Ui.appBackground(this));
         sv.setFillViewport(true);
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
@@ -66,7 +66,7 @@ public class LoginActivity extends Activity {
         LinearLayout.LayoutParams tg = new LinearLayout.LayoutParams(-2, -2);
         tg.leftMargin = Ui.dp(this, 12);
         TextView cine = Ui.title(this, "LIVE", 30, C.BG);
-        cine.setBackground(Ui.shape(C.LIME, Ui.dp(this, 8), 0, 0));
+        cine.setBackground(Ui.shape(C.ACCENT, Ui.dp(this, 8), 0, 0));
         cine.setPadding(Ui.dp(this, 12), Ui.dp(this, 2), Ui.dp(this, 12), Ui.dp(this, 2));
         brand.addView(cine, tg);
         col.addView(brand);
@@ -191,8 +191,8 @@ public class LoginActivity extends Activity {
     }
 
     private void style(TextView tab, boolean on) {
-        tab.setBackground(Ui.focusBg(this, on ? C.LIME : C.SURFACE,
-                on ? C.LIME : C.SURFACE_FOCUS, 14, C.LINE, Ui.dp(this, 1)));
+        tab.setBackground(Ui.focusBg(this, on ? C.ACCENT : C.SURFACE,
+                on ? C.ACCENT : C.SURFACE_FOCUS, 14, C.LINE, Ui.dp(this, 1)));
         tab.setTextColor(on ? C.BG : C.TEXT);
     }
 

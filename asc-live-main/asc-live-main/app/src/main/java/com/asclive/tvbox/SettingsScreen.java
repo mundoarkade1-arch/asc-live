@@ -123,7 +123,7 @@ final class SettingsScreen extends Screen {
         LinearLayout b = new LinearLayout(act);
         b.setOrientation(LinearLayout.VERTICAL);
         b.setPadding(Ui.dp(act, 20), Ui.dp(act, 16), Ui.dp(act, 20), Ui.dp(act, 16));
-        b.setBackground(Ui.shape(C.GLASS, Ui.dp(act, 14), C.LIME_40, Ui.dp(act, 1)));
+        b.setBackground(Ui.shape(C.GLASS, Ui.dp(act, 14), C.ACCENT_40, Ui.dp(act, 1)));
         b.addView(Ui.text(act, "Código do aparelho", 16, C.TEXT2));
         TextView code = Ui.title(act, "...", 30, C.TEXT);
         LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(-2, -2);

@@ -292,7 +292,7 @@ final class FootballScreen extends Screen {
         row.setFocusable(true);
         row.setClickable(true);
         row.setPadding(Ui.dp(act, 6), Ui.dp(act, 4), Ui.dp(act, 8), Ui.dp(act, 4));
-        row.setBackground(Ui.softFocusBg(act, C.SURFACE_FOCUS, 10));
+        row.setBackground(Ui.softFocusBg(act, C.SURFACE_FOCUS, 12));
         ImageView logo = shieldView();
         ImageLoader.load(logo, channel.logo, 120);
         row.addView(logo, new LinearLayout.LayoutParams(Ui.dp(act, 42), Ui.dp(act, 42)));
@@ -302,7 +302,7 @@ final class FootballScreen extends Screen {
         LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(0, -2, 1f);
         nlp.leftMargin = Ui.dp(act, 10);
         row.addView(name, nlp);
-        TextView play = Ui.text(act, "▶", 20, C.LIME);
+        TextView play = Ui.text(act, "▶", 20, C.GLOW);
         row.addView(play, new LinearLayout.LayoutParams(Ui.dp(act, 34), -2));
         target.addView(row, new LinearLayout.LayoutParams(-1, Ui.dp(act, 54)));
         row.setOnClickListener(v -> play(channel));
