@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
@@ -40,6 +41,7 @@ final class FootballScreen extends Screen {
     private final List<Match> matches = new ArrayList<>();
     private final Map<String, List<Broadcasts.Broadcast>> broadcastCache = new HashMap<>();
     private final Map<String, Boolean> requested = new HashMap<>();
+    private final Map<String, View> cardViews = new HashMap<>();
     private boolean loading;
     private View first;
     private Match selected;
@@ -175,6 +177,7 @@ final class FootballScreen extends Screen {
         cardsBox.removeAllViews();
         broadcastCache.clear();
         requested.clear();
+        cardViews.clear();
         first = null;
         selected = null;
         if (matches.isEmpty()) {
@@ -197,7 +200,7 @@ final class FootballScreen extends Screen {
         card.setFocusable(true);
         card.setClickable(true);
         card.setPadding(Ui.dp(act, 14), Ui.dp(act, 12), Ui.dp(act, 14), Ui.dp(act, 10));
-        card.setBackground(Ui.softFocusBg(act, C.SURFACE_FOCUS, 16));
+        card.setBackground(Ui.focusBg(act, C.GLASS, C.SURFACE_FOCUS, 16, C.GLASS_EDGE, Ui.dp(act, 1)));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(Ui.dp(act, 282), -1);
         lp.rightMargin = Ui.dp(act, 10);
         cardsBox.addView(card, lp);
@@ -223,6 +226,15 @@ final class FootballScreen extends Screen {
         status.setGravity(Gravity.CENTER);
         card.addView(status, new LinearLayout.LayoutParams(-1, Ui.dp(act, 26)));
         if (first == null) first = card;
+        cardViews.put(match.id, card);
+        // Seta para baixo no card: vai para a lista de canais (nunca para o menu lateral).
+        card.setOnKeyListener((v, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+                if (event.getAction() == KeyEvent.ACTION_DOWN) focusFirstChannel();
+                return true;
+            }
+            return false;
+        });
         card.setOnFocusChangeListener((v, has) -> { if (has) selectMatch(match); });
         card.setOnClickListener(v -> {
             selectMatch(match);
@@ -292,7 +304,7 @@ final class FootballScreen extends Screen {
         row.setFocusable(true);
         row.setClickable(true);
         row.setPadding(Ui.dp(act, 6), Ui.dp(act, 4), Ui.dp(act, 8), Ui.dp(act, 4));
-        row.setBackground(Ui.softFocusBg(act, C.SURFACE_FOCUS, 12));
+        row.setBackground(Ui.focusBg(act, 0x00000000, C.SURFACE_FOCUS, 12, 0, 0));
         ImageView logo = shieldView();
         ImageLoader.load(logo, channel.logo, 120);
         row.addView(logo, new LinearLayout.LayoutParams(Ui.dp(act, 42), Ui.dp(act, 42)));
@@ -304,8 +316,47 @@ final class FootballScreen extends Screen {
         row.addView(name, nlp);
         TextView play = Ui.text(act, "▶", 20, C.GOLD);
         row.addView(play, new LinearLayout.LayoutParams(Ui.dp(act, 34), -2));
-        target.addView(row, new LinearLayout.LayoutParams(-1, Ui.dp(act, 54)));
+        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(-1, Ui.dp(act, 54));
+        rlp.bottomMargin = Ui.dp(act, 4);
+        target.addView(row, rlp);
         row.setOnClickListener(v -> play(channel));
+        row.setOnKeyListener((v, keyCode, event) -> {
+            if (keyCode != KeyEvent.KEYCODE_DPAD_UP && keyCode != KeyEvent.KEYCODE_DPAD_DOWN) {
+                return false;
+            }
+            if (event.getAction() != KeyEvent.ACTION_DOWN) return true;
+            boolean up = keyCode == KeyEvent.KEYCODE_DPAD_UP;
+            View next = neighborRow(target, row, up ? -1 : 1);
+            if (next != null) {
+                next.requestFocus();
+            } else if (up) {
+                // Primeiro canal: seta para cima volta para o card do jogo.
+                View card = cardViews.get(match.id);
+                if (card != null) card.requestFocus();
+            }
+            return true;
+        });
+    }
+
+    /** Foco no primeiro canal da lista (se ainda não há canais, não faz nada). */
+    private void focusFirstChannel() {
+        for (int i = 0; i < detailChannels.getChildCount(); i++) {
+            View c = detailChannels.getChildAt(i);
+            if (c.isFocusable()) {
+                c.requestFocus();
+                return;
+            }
+        }
+    }
+
+    private static View neighborRow(LinearLayout list, View row, int step) {
+        int i = list.indexOfChild(row) + step;
+        while (i >= 0 && i < list.getChildCount()) {
+            View c = list.getChildAt(i);
+            if (c.isFocusable()) return c;
+            i += step;
+        }
+        return null;
     }
 
     private ChannelGroup primary(Match match) {
