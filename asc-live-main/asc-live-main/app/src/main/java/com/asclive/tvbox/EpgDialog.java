@@ -35,8 +35,6 @@ final class EpgDialog {
     /** Cinza claro para textos de apoio sobre o vidro (o cinza comum some em cima do vídeo). */
     private static final int SOFT = 0xFFE6E6E6;
     /** Vidro: escuro e transparente, deixa o canal aparecer, mas segura a leitura. */
-    private static final int GLASS_FILL = 0xF20A3A33;
-    private static final int GLASS_BORDER = 0x14FFFFFF;
     private static final int SHADOW = 0xFF000000;
 
     private EpgDialog() {
@@ -70,7 +68,7 @@ final class EpgDialog {
 
         LinearLayout box = new LinearLayout(act);
         box.setOrientation(LinearLayout.VERTICAL);
-        box.setBackground(Ui.shape(GLASS_FILL, Ui.dp(act, 22), GLASS_BORDER, Ui.dp(act, 1)));
+        box.setBackground(Ui.glassStrong(act, 22));
         int pad = Ui.dp(act, 28);
         box.setPadding(pad, pad - Ui.dp(act, 4), pad, pad - Ui.dp(act, 6));
 

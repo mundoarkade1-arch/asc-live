@@ -135,6 +135,58 @@ final class Broadcasts {
         return out;
     }
 
+    /**
+     * Só os canais CERTOS do jogo (nada de "costuma passar"):
+     * 1) canais de evento da própria lista com os DOIS times no nome (ex.: "Santos x Palmeiras");
+     * 2) emissoras que a própria fonte do jogo informa (campo "emissoras" do Match), procuradas
+     *    pelo nome na lista.
+     * Pode devolver lista vazia: ainda não há transmissão confirmada. Cada resolução é um canal.
+     * NUNCA chamar na thread principal.
+     */
+    static List<ChannelGroup> confirmedFor(Context ctx, Match m) throws IOException {
+        List<ChannelGroup> all = Catalog.allGroups(ctx);
+        List<ChannelGroup> out = new ArrayList<>();
+        Set<String> used = new HashSet<>();
+        List<String> homeTok = tokens(m.casa);
+        List<String> awayTok = tokens(m.fora);
+        List<ChannelGroup> both = new ArrayList<>();
+        for (ChannelGroup g : all) {
+            if (hasAll(g.key(), homeTok) && hasAll(g.key(), awayTok)) {
+                both.add(g);
+                if (both.size() >= MAX_PER_BROADCAST) {
+                    break;
+                }
+            }
+        }
+        sortNatural(both);
+        for (ChannelGroup g : both) {
+            if (used.add(g.key())) {
+                out.add(g);
+            }
+        }
+        for (String name : m.emissoras) {
+            String q = ChannelNames.queryKey(name);
+            if (q.length() < 3) {
+                continue;
+            }
+            List<ChannelGroup> hit = new ArrayList<>();
+            for (ChannelGroup g : all) {
+                if (!used.contains(g.key()) && matches(g.key(), q, 3)) {
+                    hit.add(g);
+                    if (hit.size() >= MAX_PER_BROADCAST) {
+                        break;
+                    }
+                }
+            }
+            sortNatural(hit);
+            for (ChannelGroup g : hit) {
+                used.add(g.key());
+                out.add(g);
+            }
+        }
+        return out;
+    }
+
     private static final Set<String> STOP = new HashSet<>(java.util.Arrays.asList(
             "club", "clube", "futbol", "futebol", "football"));
 

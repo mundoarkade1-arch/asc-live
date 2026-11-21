@@ -54,9 +54,40 @@ final class Ui {
         return g;
     }
 
-    /** Painel de vidro fumê: fundo claro transparente com borda fina. */
-    static GradientDrawable glass(Context c, float radiusDp) {
-        return shape(C.GLASS, dp(c, radiusDp), C.GLASS_EDGE, dp(c, 1));
+    /** Painel de vidro (glassmorfismo): verde translúcido + brilho em degradê + borda fina. */
+    static Drawable glass(Context c, float radiusDp) {
+        return glassLayers(c, radiusDp, C.GLASS_TINT, C.GLASS_TOP, C.GLASS_BOTTOM, C.GLASS_EDGE, 1);
+    }
+
+    /** Igual ao vidro, mas com a borda em outra cor (ex.: destaque). */
+    static Drawable glass(Context c, float radiusDp, int edge) {
+        return glassLayers(c, radiusDp, C.GLASS_TINT, C.GLASS_TOP, C.GLASS_BOTTOM, edge, 1);
+    }
+
+    /** Vidro firme para menus e janelas (o texto precisa ler bem por cima de qualquer coisa). */
+    static Drawable glassStrong(Context c, float radiusDp) {
+        return glassLayers(c, radiusDp, C.GLASS_STRONG_TINT, 0x29FFFFFF, 0x08FFFFFF,
+                C.GLASS_EDGE, 1);
+    }
+
+    /** Vidro que acende (mais claro + contorno dourado) quando recebe foco. */
+    static StateListDrawable glassFocusBg(Context c, float radiusDp) {
+        StateListDrawable s = new StateListDrawable();
+        Drawable on = glassLayers(c, radiusDp, C.GLASS_HI, 0x4DFFFFFF, 0x14FFFFFF, C.GOLD, 3);
+        s.addState(new int[]{android.R.attr.state_focused}, on);
+        s.addState(new int[]{android.R.attr.state_pressed}, on);
+        s.addState(new int[]{}, glass(c, radiusDp));
+        return s;
+    }
+
+    private static Drawable glassLayers(Context c, float radiusDp, int tint, int sheenTop,
+                                        int sheenBottom, int edge, int edgeDp) {
+        float r = dp(c, radiusDp);
+        GradientDrawable under = shape(tint, r, edge, dp(c, edgeDp));
+        GradientDrawable sheen = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{sheenTop, sheenBottom});
+        sheen.setCornerRadius(r);
+        return new android.graphics.drawable.LayerDrawable(new Drawable[]{under, sheen});
     }
 
     /**

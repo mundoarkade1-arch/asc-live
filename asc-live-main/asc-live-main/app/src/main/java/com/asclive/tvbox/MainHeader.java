@@ -16,6 +16,9 @@ import java.util.Locale;
 final class MainHeader extends LinearLayout {
     interface Listener { void onSearch(); void onSettings(); }
 
+    /** Botão de busca e de ajustes (para o foco chegar até o topo com o controle). */
+    final TextView searchView;
+    final TextView settingsView;
     private final TextView clock;
     private final TextView date;
     private final Runnable tick = new Runnable() {
@@ -38,12 +41,13 @@ final class MainHeader extends LinearLayout {
         brand.setTypeface(Ui.bold(c), Typeface.BOLD);
         addView(brand, new LayoutParams(Ui.dp(c, 145), -2));
 
-        TextView search = Ui.text(c, "⌕  Buscar canais, jogos e times", 16, C.TEXT2);
+        TextView search = Ui.text(c, "⌕  Buscar times, jogos e canais", 16, C.TEXT);
+        searchView = search;
         search.setGravity(Gravity.CENTER_VERTICAL);
         search.setFocusable(true);
         search.setClickable(true);
         search.setPadding(Ui.dp(c, 16), 0, Ui.dp(c, 16), 0);
-        search.setBackground(Ui.softFocusBg(c, C.SURFACE_FOCUS, 12));
+        search.setBackground(Ui.glassFocusBg(c, 12));
         search.setOnClickListener(v -> listener.onSearch());
         LayoutParams searchLp = new LayoutParams(0, Ui.dp(c, 46), 1f);
         searchLp.leftMargin = Ui.dp(c, 20);
@@ -70,7 +74,8 @@ final class MainHeader extends LinearLayout {
         settings.setGravity(Gravity.CENTER);
         settings.setFocusable(true);
         settings.setClickable(true);
-        settings.setBackground(Ui.softFocusBg(c, C.SURFACE_FOCUS, 12));
+        settingsView = settings;
+        settings.setBackground(Ui.glassFocusBg(c, 12));
         settings.setOnClickListener(v -> listener.onSettings());
         LayoutParams settingsLp = new LayoutParams(Ui.dp(c, 48), Ui.dp(c, 46));
         settingsLp.leftMargin = Ui.dp(c, 10);

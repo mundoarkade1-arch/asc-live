@@ -51,6 +51,8 @@ final class LiveScreen extends Screen {
     private final TvGrid grid;
     private final ChanAdapter adapter = new ChanAdapter();
     private final TextView notice;
+    private final Skeleton chanSkeleton;
+    private final Skeleton catSkeleton;
     private final Handler h = new Handler(Looper.getMainLooper());
     private final Handler hp = new Handler(Looper.getMainLooper());
     private final SimpleDateFormat clock = new SimpleDateFormat("HH:mm", Locale.getDefault());
@@ -123,6 +125,9 @@ final class LiveScreen extends Screen {
             return false;
         });
         catPanel.addView(catList, new FrameLayout.LayoutParams(-1, -1));
+        catSkeleton = Skeleton.textRows(act);
+        catSkeleton.setVisibility(View.GONE);
+        catPanel.addView(catSkeleton, new FrameLayout.LayoutParams(-1, -1));
         LinearLayout.LayoutParams cpl = new LinearLayout.LayoutParams(0, -1, 2.8f);
         cpl.rightMargin = Ui.dp(act, 12);
         cpl.bottomMargin = Ui.dp(act, 6);
@@ -164,6 +169,9 @@ final class LiveScreen extends Screen {
         notice.setPadding(Ui.dp(act, 24), 0, Ui.dp(act, 24), 0);
         chanPanel.addView(notice, new FrameLayout.LayoutParams(-1, -1));
         notice.setVisibility(View.GONE);
+        chanSkeleton = Skeleton.channelRows(act);
+        chanSkeleton.setVisibility(View.GONE);
+        chanPanel.addView(chanSkeleton, new FrameLayout.LayoutParams(-1, -1));
         LinearLayout.LayoutParams chl = new LinearLayout.LayoutParams(0, -1, 4.8f);
         chl.rightMargin = Ui.dp(act, 12);
         root.addView(chanPanel, chl);
@@ -292,7 +300,9 @@ final class LiveScreen extends Screen {
             return;
         }
         loading = true;
-        showNotice("Carregando canais...");
+        notice.setVisibility(View.GONE);
+        chanSkeleton.setVisibility(View.VISIBLE);
+        catSkeleton.setVisibility(View.VISIBLE);
         bg(() -> new Data(Catalog.liveCategories(act), Catalog.allGroups(act)),
                 new Bg.Done<Data>() {
                     @Override
@@ -309,12 +319,19 @@ final class LiveScreen extends Screen {
                 });
     }
 
+    private void hideSkeletons() {
+        chanSkeleton.setVisibility(View.GONE);
+        catSkeleton.setVisibility(View.GONE);
+    }
+
     private void showNotice(String text) {
+        hideSkeletons();
         notice.setText(text);
         notice.setVisibility(View.VISIBLE);
     }
 
     private void show(Data d) {
+        hideSkeletons();
         all = d.groups;
         catIds.clear();
         catNames.clear();

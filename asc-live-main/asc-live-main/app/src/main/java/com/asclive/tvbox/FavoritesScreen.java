@@ -45,7 +45,7 @@ final class FavoritesScreen extends GroupGridScreen {
         }
         loading = true;
         if (!hasChannels()) {
-            showNotice("Carregando favoritos...");
+            showLoading();
         }
         bg(() -> {
             Set<String> keys = new HashSet<>(Favorites.all(act));

@@ -22,6 +22,10 @@
 | ChannelGroup | UM canal da lista (nome com resolução, logo, categoria); chave e qualidade calculadas sob demanda |
 | EpgCache | programação "agora / a seguir" dos canais (1 min, 80 canais, 2 pedidos por vez) |
 | EpgDialog | janela da programação do canal (não usada mais pelo player) |
+| Teams, FavTeams | lista de times (ESPN, com brasão) e times favoritos / do coração |
+| Fixtures, Lineups | calendário de jogos dos times e escalação (ESPN) |
+| TeamView, TeamCard, MatchDialog | página do time, cartão de time e janelinha de canais do jogo |
+| Skeleton | esqueleto de carregamento (blocos de vidro com brilho que passa) |
 | LoadingSpinner | bolinha de carregamento que gira (relógio próprio, não depende das animações do sistema) |
 
 ## Player

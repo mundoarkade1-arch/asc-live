@@ -104,7 +104,7 @@ final class SettingsScreen extends Screen {
         r.setFocusable(true);
         r.setClickable(true);
         r.setPadding(Ui.dp(act, 20), Ui.dp(act, 16), Ui.dp(act, 20), Ui.dp(act, 16));
-        r.setBackground(Ui.focusBg(act, C.GLASS, C.GLASS_HI, 14, C.GLASS_EDGE, Ui.dp(act, 1)));
+        r.setBackground(Ui.glassFocusBg(act, 14));
         TextView l = Ui.text(act, label, 19, C.TEXT);
         r.addView(l, new LinearLayout.LayoutParams(0, -2, 1f));
         if (!value.isEmpty()) {
@@ -123,7 +123,7 @@ final class SettingsScreen extends Screen {
         LinearLayout b = new LinearLayout(act);
         b.setOrientation(LinearLayout.VERTICAL);
         b.setPadding(Ui.dp(act, 20), Ui.dp(act, 16), Ui.dp(act, 20), Ui.dp(act, 16));
-        b.setBackground(Ui.shape(C.GLASS, Ui.dp(act, 14), C.ACCENT_40, Ui.dp(act, 1)));
+        b.setBackground(Ui.glass(act, 14, C.ACCENT_40));
         b.addView(Ui.text(act, "Código do aparelho", 16, C.TEXT2));
         TextView code = Ui.title(act, "...", 30, C.TEXT);
         LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(-2, -2);

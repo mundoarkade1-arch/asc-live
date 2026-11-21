@@ -26,6 +26,7 @@ abstract class GroupGridScreen extends Screen {
     /** Grade + aviso ("Carregando...", "Nenhum favorito"), um por cima do outro. */
     final FrameLayout gridHolder;
     private final TextView notice;
+    private final Skeleton skeleton;
     private final Handler h = new Handler(Looper.getMainLooper());
 
     GroupGridScreen(ShellActivity act) {
@@ -52,11 +53,26 @@ abstract class GroupGridScreen extends Screen {
         gridHolder = new FrameLayout(act);
         gridHolder.addView(grid, new FrameLayout.LayoutParams(-1, -1));
         gridHolder.addView(notice, new FrameLayout.LayoutParams(-1, -1));
+        gridHolder.addView(skeleton = Skeleton.cards(act, epgOn(act)),
+                new FrameLayout.LayoutParams(-1, -1));
+        skeleton.setVisibility(View.GONE);
         notice.setVisibility(View.GONE);
+    }
+
+    private static boolean epgOn(ShellActivity act) {
+        CredentialStore.Credentials c = Catalog.creds(act);
+        return c != null && !Catalog.isM3u(c);
+    }
+
+    /** Mostra o esqueleto (blocos de vidro com brilho) enquanto os canais carregam. */
+    void showLoading() {
+        notice.setVisibility(View.GONE);
+        skeleton.setVisibility(View.VISIBLE);
     }
 
     /** Troca os canais mostrados. Se não houver nenhum, mostra emptyText. */
     void setGroups(List<ChannelGroup> groups, String emptyText) {
+        skeleton.setVisibility(View.GONE);
         adapter.items = groups;
         adapter.notifyDataSetChanged();
         if (groups.isEmpty()) {
@@ -67,6 +83,7 @@ abstract class GroupGridScreen extends Screen {
     }
 
     void showNotice(String text) {
+        skeleton.setVisibility(View.GONE);
         notice.setText(text);
         notice.setVisibility(View.VISIBLE);
     }

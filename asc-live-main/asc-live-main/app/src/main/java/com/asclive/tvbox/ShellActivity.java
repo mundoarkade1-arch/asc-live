@@ -58,7 +58,7 @@ public class ShellActivity extends Activity implements Sidebar.Listener {
         }
         AppPrefs.setWelcomeDone(this);
         content.post(() -> Dialogs.info(this, "Bem-vindo ao ASC Live",
-                "Use a barra no topo para escolher InÃ­cio, Canais, Favoritos, Buscar, Atualizar ou Ajustes."));
+                "Use a lupa no topo para buscar times, jogos e canais, e o menu da esquerda para o resto."));
     }
 
     void showScreen(int id, boolean force) {
@@ -113,6 +113,20 @@ public class ShellActivity extends Activity implements Sidebar.Listener {
     }
 
     @Override
+    public void onUpOut() {
+        if (header != null) header.searchView.requestFocus();
+    }
+
+    /** Abre a página de um time na tela de Futebol (usado pela busca). */
+    void openTeam(Teams.Team team) {
+        sidebar.setActive(Sidebar.FOOTBALL);
+        showScreen(Sidebar.FOOTBALL, true);
+        if (current instanceof FootballScreen) {
+            ((FootballScreen) current).openTeam(team);
+        }
+    }
+
+    @Override
     public void onTouched() {
         if (current != null) current.onPause();
     }
@@ -124,6 +138,7 @@ public class ShellActivity extends Activity implements Sidebar.Listener {
             ImageLoader.clear();
             Catalog.clearCache(getApplicationContext());
             FootballApi.clearCache(getApplicationContext());
+            Fixtures.clearCache(getApplicationContext());
             showScreen(currentId < 0 ? Sidebar.FOOTBALL : currentId, true);
             return;
         }
@@ -140,6 +155,12 @@ public class ShellActivity extends Activity implements Sidebar.Listener {
                 && event.getRepeatCount() == 0 && current.handleMenu()) {
             return true;
         }
+        if (header != null && header.hasFocus() && keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+            if (current == null || !current.focusContent()) {
+                sidebar.focusActive();
+            }
+            return true;
+        }
         if (sidebar != null && sidebar.hasFocus() && keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
             return current != null && current.focusContent();
         }
@@ -151,7 +172,8 @@ public class ShellActivity extends Activity implements Sidebar.Listener {
             View f = getCurrentFocus();
             View n = f == null ? null : f.focusSearch(View.FOCUS_UP);
             if (n == null || n == f || !isInContent(n)) {
-                sidebar.focusNearest(f == null ? 0 : f.getTop());
+                // Saiu do topo do conteúdo: vai para a busca, no topo da tela.
+                header.searchView.requestFocus();
                 return true;
             }
         }

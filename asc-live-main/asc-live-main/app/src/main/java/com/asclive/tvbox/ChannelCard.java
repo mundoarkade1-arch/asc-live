@@ -54,7 +54,7 @@ final class ChannelCard extends FrameLayout {
         corner.setTranslationY(Ui.dp(c, 8));
 
         FrameLayout poster = new FrameLayout(c);
-        poster.setBackground(Ui.shape(C.GLASS, r, C.GLASS_EDGE, Ui.dp(c, 1)));
+        poster.setBackground(Ui.glass(c, 16));
         final float radius = r;
         poster.setOutlineProvider(new ViewOutlineProvider() {
             @Override

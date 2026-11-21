@@ -264,6 +264,11 @@ final class FootballApi {
 
     // ---------- Leitura de um jogo ----------
 
+    /** Lê um jogo no formato da ESPN (usado também por Fixtures). */
+    static Match parseEvent(String ligaId, String ligaNome, JSONObject ev) {
+        return parseEvent(new League(ligaId, ligaNome), ev);
+    }
+
     private static Match parseEvent(League l, JSONObject ev) {
         try {
             if (ev == null) {
@@ -281,6 +286,8 @@ final class FootballApi {
             }
             String casa = "";
             String fora = "";
+            String idCasa = "";
+            String idFora = "";
             String escCasa = "";
             String escFora = "";
             String golsCasa = "";
@@ -296,10 +303,12 @@ final class FootballApi {
                 String score = c.optString("score", "");
                 if ("home".equals(c.optString("homeAway", ""))) {
                     casa = name;
+                    idCasa = team.optString("id", "");
                     escCasa = logo;
                     golsCasa = score;
                 } else {
                     fora = name;
+                    idFora = team.optString("id", "");
                     escFora = logo;
                     golsFora = score;
                 }
@@ -336,11 +345,46 @@ final class FootballApi {
             if (status != Match.SCHEDULED && !golsCasa.isEmpty() && !golsFora.isEmpty()) {
                 placar = golsCasa + " x " + golsFora;
             }
+            JSONObject comp = comps.getJSONObject(0);
+            JSONObject venue = comp.optJSONObject("venue");
+            String local = venue == null ? "" : venue.optString("fullName", "");
             return new Match(id, l.id, l.nome, casa, fora, escCasa, escFora, time, status,
-                    text, placar);
+                    text, placar, idCasa, idFora, local, broadcastNames(comp));
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /** Emissoras que a ESPN informa para o jogo (quando informa; para o Brasil quase nunca). */
+    private static List<String> broadcastNames(JSONObject comp) {
+        List<String> out = new ArrayList<>();
+        try {
+            JSONArray geo = comp.optJSONArray("geoBroadcasts");
+            if (geo != null) {
+                for (int i = 0; i < geo.length(); i++) {
+                    JSONObject media = geo.getJSONObject(i).optJSONObject("media");
+                    String n = media == null ? "" : media.optString("shortName", "");
+                    if (!n.isEmpty() && !out.contains(n)) {
+                        out.add(n);
+                    }
+                }
+            }
+            JSONArray br = comp.optJSONArray("broadcasts");
+            if (br != null) {
+                for (int i = 0; i < br.length(); i++) {
+                    JSONArray names = br.getJSONObject(i).optJSONArray("names");
+                    for (int j = 0; names != null && j < names.length(); j++) {
+                        String n = names.optString(j, "");
+                        if (!n.isEmpty() && !out.contains(n)) {
+                            out.add(n);
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            // sem emissoras da fonte
+        }
+        return out;
     }
 
     private static String https(String url) {
@@ -417,6 +461,54 @@ final class FootballApi {
         });
     }
 
+    // ---------- Para outras classes (times, calendário, escalação) ----------
+
+    /** Baixa um JSON por HTTPS (a ESPN). Só HTTPS. NUNCA chamar na thread principal. */
+    static JSONObject getJson(String address, int maxBytes) throws Exception {
+        URL url = new URL(address);
+        if (!"https".equals(url.getProtocol())) {
+            throw new IllegalStateException("so https");
+        }
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setConnectTimeout(TIMEOUT_MS);
+        conn.setReadTimeout(TIMEOUT_MS);
+        conn.setRequestProperty("User-Agent", USER_AGENT);
+        conn.setRequestProperty("Accept", "application/json");
+        try {
+            if (conn.getResponseCode() != 200) {
+                throw new IllegalStateException("resposta");
+            }
+            InputStream in = conn.getInputStream();
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) > 0) {
+                bos.write(buf, 0, n);
+                if (bos.size() > maxBytes) {
+                    throw new IllegalStateException("grande demais");
+                }
+            }
+            in.close();
+            return new JSONObject(new String(bos.toByteArray(), StandardCharsets.UTF_8));
+        } finally {
+            conn.disconnect();
+        }
+    }
+
+    /** Base da ESPN para futebol (termina com "/"). */
+    static String base() {
+        return BASE;
+    }
+
+    /** Ligas de ligas.json como pares {id, nome}. */
+    static List<String[]> leagues(Context app) {
+        List<String[]> out = new ArrayList<>();
+        for (League l : readLeagues(app.getApplicationContext())) {
+            out.add(new String[]{l.id, l.nome});
+        }
+        return out;
+    }
+
     // ---------- Ligas (assets) e cache ----------
 
     private static List<League> readLeagues(Context app) {
@@ -462,9 +554,7 @@ final class FootballApi {
             List<Match> out = new ArrayList<>();
             for (int i = 0; i < a.length(); i++) {
                 JSONObject o = a.getJSONObject(i);
-                out.add(new Match(o.optString("id"), o.optString("li"), o.optString("ln"),
-                        o.optString("c"), o.optString("f"), o.optString("ec"), o.optString("ef"),
-                        o.optLong("h"), o.optInt("s"), o.optString("t"), o.optString("p")));
+                out.add(Match.fromJson(o));
             }
             return new Cached(root.optLong("t", 0L), out);
         } catch (Exception e) {
@@ -476,19 +566,7 @@ final class FootballApi {
         try {
             JSONArray a = new JSONArray();
             for (Match m : matches) {
-                JSONObject o = new JSONObject();
-                o.put("id", m.id);
-                o.put("li", m.ligaId);
-                o.put("ln", m.liga);
-                o.put("c", m.casa);
-                o.put("f", m.fora);
-                o.put("ec", m.escudoCasa);
-                o.put("ef", m.escudoFora);
-                o.put("h", m.horario);
-                o.put("s", m.status);
-                o.put("t", m.statusText);
-                o.put("p", m.placar);
-                a.put(o);
+                a.put(m.toJson());
             }
             JSONObject root = new JSONObject();
             root.put("d", day);
