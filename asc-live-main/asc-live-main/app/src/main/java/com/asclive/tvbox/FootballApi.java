@@ -475,8 +475,9 @@ final class FootballApi {
         conn.setRequestProperty("User-Agent", USER_AGENT);
         conn.setRequestProperty("Accept", "application/json");
         try {
-            if (conn.getResponseCode() != 200) {
-                throw new IllegalStateException("resposta");
+            int code = conn.getResponseCode();
+            if (code != 200) {
+                throw new IllegalStateException("http " + code);
             }
             InputStream in = conn.getInputStream();
             ByteArrayOutputStream bos = new ByteArrayOutputStream();

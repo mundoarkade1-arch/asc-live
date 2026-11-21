@@ -5,6 +5,12 @@ O código inteiro foi compilado no ambiente do agente contra um `android.jar` re
 classes de teste no lugar do `androidx.media3` e `androidx.core`. O **build do GitHub Actions** e o
 **teste no aparelho (TX9)** ainda são a prova final: ninguém abriu o app num TV Box ainda.
 
+## Rodada 20 (página do time: "Não foi possível buscar os jogos")
+- [x] `Fixtures.forTeam`: primeiro busca só a liga do time (pedido pequeno), depois o calendário de todas as ligas, depois o calendário do próprio time. Só mostra erro se tudo falhar.
+- [x] `Fixtures.fetchLeagueResilient`: se o pedido grande (45 dias, limit=500) falhar, tenta sem `limit`, depois janela menor, depois só hoje.
+- [x] `FootballApi.getJson` agora informa o código HTTP; `TeamView` mostra o motivo entre parênteses abaixo do aviso de erro.
+- [ ] Validar no TV Box com o time do coração. Se ainda falhar, ler o motivo entre parênteses.
+
 ## Rodada 19 (Futebol para o torcedor + busca no topo)
 - [x] Busca saiu do menu lateral e ficou no topo (lupa). Procura JOGOS (dia, hora e canais confirmados), TIMES e CANAIS, em 3 abas (`SearchScreen`). Seta para cima no topo do conteúdo ou no primeiro item do menu vai para a lupa.
 - [x] Futebol (`FootballScreen`): time do coração em destaque (♥), jogos em destaque de hoje, Meus times (★) e Outros times (rola para baixo). OK abre o time; segurar OK marca a ★.

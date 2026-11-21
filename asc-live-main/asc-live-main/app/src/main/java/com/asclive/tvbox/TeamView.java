@@ -175,7 +175,8 @@ final class TeamView extends LinearLayout {
             public void fail(Exception e) {
                 gamesBox.removeAllViews();
                 gamesBox.addView(Ui.text(act, "Não foi possível buscar os jogos agora.\n"
-                        + "Confira a internet e tente de novo.", 16, C.TEXT2));
+                        + "Confira a internet e tente de novo.\n"
+                        + "(" + String.valueOf(e.getMessage()) + ")", 16, C.TEXT2));
             }
         });
     }
