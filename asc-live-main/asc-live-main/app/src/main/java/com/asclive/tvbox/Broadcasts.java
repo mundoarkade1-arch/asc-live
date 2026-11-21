@@ -191,8 +191,16 @@ final class Broadcasts {
             }
         }
 
-        // 2) Programação da própria lista.
-        List<ChannelGroup> epg = epgHits(ctx, all, m, homeTok, awayTok);
+        // 2) Programação da própria lista (grade completa; se falhar, a programação curta).
+        StringBuilder status = new StringBuilder();
+        List<ChannelGroup> epg;
+        try {
+            epg = guideHits(ctx, all, m, homeTok, awayTok, status);
+        } catch (Exception e) {
+            status.append("grade da lista: falhou (").append(String.valueOf(e.getMessage()))
+                    .append(")");
+            epg = epgHits(ctx, all, m, homeTok, awayTok);
+        }
         sortNatural(epg);
         for (ChannelGroup g : epg) {
             if (used.add(g.key())) {
@@ -216,9 +224,121 @@ final class Broadcasts {
                 }
             }
         }
+        status.append(" | grade de TV do Brasil: ").append(names.size()).append(" emissora(s)");
         synchronized (INFO) {
             INFO.put(m.ligaId + "|" + m.id, info.toString());
+            STATUS.put(m.ligaId + "|" + m.id, status.toString());
         }
+        return out;
+    }
+
+    private static final Map<String, String> STATUS = new HashMap<>();
+
+    /** O que cada fonte achou (para eu saber onde falhou). Texto curto para a tela. */
+    static String statusFor(Match m) {
+        synchronized (INFO) {
+            String v = STATUS.get(m.ligaId + "|" + m.id);
+            return v == null ? "" : v;
+        }
+    }
+
+    // ---------- Fonte 2 (principal): grade completa do servidor (xmltv) ----------
+
+    private static final long GUIDE_TTL_MS = 30L * 60L * 1000L;
+    private static final long GUIDE_FAIL_MS = 2L * 60L * 1000L;
+    private static final long GUIDE_AHEAD_MS = 14L * 24L * 3600L * 1000L;
+    private static final long GUIDE_BEHIND_MS = 6L * 3600L * 1000L;
+
+    private static List<XtreamApi.XmlProgram> guide;
+    private static long guideAt;
+    private static String guideKey = "";
+    private static String guideError = "";
+    private static long guideErrorAt;
+
+    private static synchronized List<XtreamApi.XmlProgram> loadGuide(
+            CredentialStore.Credentials c) throws IOException {
+        long now = System.currentTimeMillis();
+        String key = c.server + "|" + c.user;
+        if (guide != null && key.equals(guideKey) && now - guideAt < GUIDE_TTL_MS) {
+            return guide;
+        }
+        if (key.equals(guideKey) && !guideError.isEmpty() && now - guideErrorAt < GUIDE_FAIL_MS) {
+            throw new IOException(guideError);
+        }
+        try {
+            List<XtreamApi.XmlProgram> fresh = XtreamApi.xmltv(c.server, c.user, c.pass,
+                    now - GUIDE_BEHIND_MS, now + GUIDE_AHEAD_MS);
+            guide = fresh;
+            guideAt = now;
+            guideKey = key;
+            guideError = "";
+            return fresh;
+        } catch (IOException e) {
+            guideKey = key;
+            guideError = String.valueOf(e.getMessage());
+            guideErrorAt = now;
+            throw e;
+        }
+    }
+
+    private static List<ChannelGroup> guideHits(Context ctx, List<ChannelGroup> all, Match m,
+                                                List<String> homeTok, List<String> awayTok,
+                                                StringBuilder status) throws IOException {
+        List<ChannelGroup> out = new ArrayList<>();
+        CredentialStore.Credentials c = Catalog.creds(ctx);
+        if (c == null || Catalog.isM3u(c)) {
+            status.append("grade da lista: só existe em lista por servidor");
+            return out;
+        }
+        long now = System.currentTimeMillis();
+        if (m.horario < now - GUIDE_BEHIND_MS || m.horario > now + GUIDE_AHEAD_MS) {
+            status.append("grade da lista: jogo fora dos próximos 14 dias");
+            return out;
+        }
+        List<XtreamApi.XmlProgram> progs = loadGuide(c);
+        // Canais da lista por código de guia (epgId).
+        Map<String, List<ChannelGroup>> byEpg = new HashMap<>();
+        for (ChannelGroup g : all) {
+            for (ChannelGroup.Variant v : g.variants) {
+                String e = v.item.epgId;
+                if (e == null || e.trim().isEmpty()) {
+                    continue;
+                }
+                String k = e.trim().toLowerCase(Locale.ROOT);
+                List<ChannelGroup> l = byEpg.get(k);
+                if (l == null) {
+                    l = new ArrayList<>();
+                    byEpg.put(k, l);
+                }
+                if (!l.contains(g)) {
+                    l.add(g);
+                }
+            }
+        }
+        int found = 0;
+        for (XtreamApi.XmlProgram p : progs) {
+            boolean near = Math.abs(p.start - m.horario) <= EPG_NEAR_MS
+                    || (p.start <= m.horario && p.stop >= m.horario);
+            if (!near) {
+                continue;
+            }
+            String key = ChannelNames.queryKey(p.text);
+            if (!(hasAll(key, homeTok) && hasAll(key, awayTok))) {
+                continue;
+            }
+            List<ChannelGroup> l = byEpg.get(p.channel);
+            if (l == null) {
+                continue;
+            }
+            found++;
+            for (ChannelGroup g : l) {
+                if (!out.contains(g)) {
+                    out.add(g);
+                }
+            }
+        }
+        status.append("grade da lista: ").append(progs.size()).append(" jogos lidos, ")
+                .append(found).append(" deste jogo");
         return out;
     }
 

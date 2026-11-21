@@ -44,6 +44,12 @@ final class Fixtures {
     private static long memoTime;
     /** Último motivo de falha de rede (para mostrar na tela e achar o problema). */
     private static volatile String lastError = "";
+    /** O que cada passo da busca de jogos do time achou (aparece na tela se não achar nada). */
+    private static volatile String diag = "";
+
+    static String lastDiag() {
+        return diag;
+    }
 
     private Fixtures() {
     }
@@ -84,11 +90,17 @@ final class Fixtures {
         new File(ctx.getApplicationContext().getCacheDir(), CACHE_FILE).delete();
     }
 
+    /** Até onde olhar para a frente na liga do próprio time (para mostrar TODOS os próximos). */
+    private static final int TEAM_DAYS_AHEAD = 240;
+
     /** Jogos do time (por id; se a fonte não deu id, pelo nome), em ordem de horário. */
     static List<Match> forTeam(Context ctx, Teams.Team team) throws IOException {
         List<Match> out = new ArrayList<>();
         Set<String> seen = new HashSet<>();
-        // 1) A liga do time sozinha: um pedido pequeno e rápido.
+        StringBuilder d = new StringBuilder();
+        d.append("time ").append(team.name).append(" (").append(team.id).append(") liga ")
+                .append(team.ligaId);
+        // 1) A liga do time sozinha, olhando longe: um pedido pequeno e rápido.
         try {
             String ligaName = team.ligaId;
             for (String[] l : FootballApi.leagues(ctx.getApplicationContext())) {
@@ -97,30 +109,49 @@ final class Fixtures {
                 }
             }
             if (team.ligaId.matches("[a-z0-9._-]{1,60}")) {
-                for (Match m : fetchLeagueResilient(team.ligaId, ligaName)) {
+                List<Match> liga = fetchLeagueResilient(team.ligaId, ligaName, TEAM_DAYS_AHEAD);
+                int mine = 0;
+                for (Match m : liga) {
                     if (isTeam(team, m) && seen.add(m.ligaId + "|" + m.id)) {
                         out.add(m);
+                        mine++;
                     }
                 }
+                d.append("; liga: ").append(liga.size()).append(" jogos, ").append(mine)
+                        .append(" do time");
             }
-        } catch (Exception ignored) {
-            // segue para o calendário completo
+        } catch (Exception e) {
+            d.append("; liga: erro ").append(String.valueOf(e.getMessage()));
         }
         // 2) Todas as ligas (traz também Libertadores, Copa do Brasil etc.).
         IOException failure = null;
         try {
-            for (Match m : all(ctx)) {
+            int mine = 0;
+            List<Match> every = all(ctx);
+            for (Match m : every) {
                 if (isTeam(team, m) && seen.add(m.ligaId + "|" + m.id)) {
                     out.add(m);
+                    mine++;
                 }
             }
+            d.append("; todas: ").append(every.size()).append(" jogos, ").append(mine)
+                    .append(" novos do time");
         } catch (IOException e) {
             failure = e;
+            d.append("; todas: erro ").append(String.valueOf(e.getMessage()));
         }
-        // 3) Plano B: o calendário do próprio time.
-        if (out.isEmpty()) {
-            out.addAll(teamSchedule(team));
+        // 3) Calendário do próprio time (rota da ESPN), sempre: pode ter jogos mais à frente.
+        List<Match> own = teamSchedule(team);
+        int added = 0;
+        for (Match m : own) {
+            if (seen.add(m.ligaId + "|" + m.id)) {
+                out.add(m);
+                added++;
+            }
         }
+        d.append("; calendário do time: ").append(own.size()).append(" jogos, ").append(added)
+                .append(" novos");
+        diag = d.toString();
         if (out.isEmpty() && failure != null) {
             throw failure;
         }
@@ -192,7 +223,7 @@ final class Fixtures {
                 jobs.add(new Callable<List<Match>>() {
                     @Override
                     public List<Match> call() throws Exception {
-                        return fetchLeagueResilient(l[0], l[1]);
+                        return fetchLeagueResilient(l[0], l[1], DAYS_AHEAD);
                     }
                 });
             }
@@ -223,14 +254,17 @@ final class Fixtures {
      * Uma liga, com plano B: se o pedido grande falhar, tenta sem "limit", depois uma janela
      * menor, e por fim o dia de hoje. Só falha se todos falharem.
      */
-    private static List<Match> fetchLeagueResilient(String id, String name) throws Exception {
+    private static List<Match> fetchLeagueResilient(String id, String name, int ahead)
+            throws Exception {
         List<Match> out = new ArrayList<>();
         if (!id.matches("[a-z0-9._-]{1,60}")) {
             return out;
         }
-        String wide = day(-DAYS_BACK) + "-" + day(DAYS_AHEAD);
+        String wide = day(-DAYS_BACK) + "-" + day(ahead);
+        String normal = day(-DAYS_BACK) + "-" + day(DAYS_AHEAD);
         String mid = day(-3) + "-" + day(14);
-        String[] queries = {"?limit=500&dates=" + wide, "?dates=" + wide, "?dates=" + mid, ""};
+        String[] queries = {"?limit=500&dates=" + wide, "?dates=" + wide,
+                "?limit=500&dates=" + normal, "?dates=" + mid, ""};
         Exception last = null;
         for (String q : queries) {
             try {
@@ -246,18 +280,28 @@ final class Fixtures {
         throw last == null ? new IOException("sem resposta") : last;
     }
 
-    /** Plano B: o calendário do próprio time (rota da ESPN), se a janela não trouxe nada. */
+    /** O calendário do próprio time (rota da ESPN), com mais de uma tentativa. */
     private static List<Match> teamSchedule(Teams.Team team) {
         List<Match> out = new ArrayList<>();
-        try {
-            if (!team.ligaId.matches("[a-z0-9._-]{1,60}") || !team.id.matches("[0-9]{1,12}")) {
-                return out;
+        if (!team.ligaId.matches("[a-z0-9._-]{1,60}") || !team.id.matches("[0-9]{1,12}")) {
+            return out;
+        }
+        String[] tails = {"", "?fixture=true"};
+        Set<String> seen = new HashSet<>();
+        for (String tail : tails) {
+            try {
+                JSONObject root = FootballApi.getJson(FootballApi.base() + team.ligaId
+                        + "/teams/" + team.id + "/schedule" + tail, MAX_BYTES);
+                List<Match> part = new ArrayList<>();
+                readEvents(root.optJSONArray("events"), team.ligaId, team.ligaId, part);
+                for (Match m : part) {
+                    if (seen.add(m.ligaId + "|" + m.id)) {
+                        out.add(m);
+                    }
+                }
+            } catch (Exception ignored) {
+                // essa rota não respondeu: tenta a outra
             }
-            JSONObject root = FootballApi.getJson(FootballApi.base() + team.ligaId + "/teams/"
-                    + team.id + "/schedule", MAX_BYTES);
-            readEvents(root.optJSONArray("events"), team.ligaId, team.ligaId, out);
-        } catch (Exception ignored) {
-            // sem calendário do time agora
         }
         return out;
     }

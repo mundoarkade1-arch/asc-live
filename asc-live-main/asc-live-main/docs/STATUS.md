@@ -5,6 +5,13 @@ O código inteiro foi compilado no ambiente do agente contra um `android.jar` re
 classes de teste no lugar do `androidx.media3` e `androidx.core`. O **build do GitHub Actions** e o
 **teste no aparelho (TX9)** ainda são a prova final: ninguém abriu o app num TV Box ainda.
 
+## Rodada 22 (todos os próximos jogos + canais pela grade completa do servidor)
+- [x] `Fixtures.forTeam`: a liga do time é lida até 240 dias à frente; depois todas as ligas; depois o calendário do próprio time (duas rotas da ESPN). Se não achar nada, a tela mostra um diagnóstico entre parênteses (`Fixtures.lastDiag`).
+- [x] `XtreamApi.xmltv`: baixa a grade COMPLETA do servidor (`xmltv.php`) lendo aos poucos (XmlPullParser), guarda só programas com cara de jogo.
+- [x] `Broadcasts.guideHits`: acha, na própria lista, os canais cujo programa tem os dois times perto do horário do jogo (liga o código de guia `epgId` ao canal). Cache de 30 min. Se o `xmltv` falhar, usa a programação curta de antes.
+- [x] `Broadcasts.statusFor` + `MatchDialog`: quando não acha canal, mostra o que cada fonte achou entre parênteses.
+- [ ] Validar no TV Box. Se a lista não tiver guia de jogos, só a grade de TV do Brasil e o canal de evento valem.
+
 ## Rodada 21 (canais certos do jogo + página do time mais limpa)
 - [x] `Broadcasts.confirmedFor` deixou de usar as emissoras da ESPN (são dos EUA: "ESPN", "Fox" etc. casavam com canal aleatório). Agora só confirma por: (1) canal de evento com os dois times no nome; (2) programação (EPG) da própria lista, canal esportivo com os dois times no título (jogos nas próximas 36 h, só lista por servidor); (3) grade de TV do Brasil do TheSportsDB (`eventstv.php`, país Brasil), com o nome da emissora procurado como palavra inteira na lista.
 - [x] `Broadcasts.infoFor`: se a grade diz onde passa mas o canal não está na lista, `MatchDialog` mostra "Segundo a grade de TV do Brasil, este jogo passa em: ...".

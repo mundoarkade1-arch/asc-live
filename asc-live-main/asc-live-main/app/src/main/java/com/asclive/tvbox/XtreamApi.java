@@ -4,6 +4,7 @@ import android.net.Uri;
 import android.util.Base64;
 import android.util.JsonReader;
 import android.util.JsonToken;
+import android.util.Xml;
 
 import java.io.BufferedInputStream;
 import java.io.FilterInputStream;
@@ -17,6 +18,11 @@ import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
+import java.util.zip.GZIPInputStream;
+import java.io.PushbackInputStream;
+import org.xmlpull.v1.XmlPullParser;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -538,6 +544,137 @@ public final class XtreamApi {
     }
 
     // ---------- Ajudas ----------
+
+    /** Um programa da grade completa (xmltv): canal, começo, fim e texto (título + descrição). */
+    static final class XmlProgram {
+        final String channel;
+        final long start;
+        final long stop;
+        final String text;
+
+        XmlProgram(String channel, long start, long stop, String text) {
+            this.channel = channel;
+            this.start = start;
+            this.stop = stop;
+            this.text = text;
+        }
+    }
+
+    private static final int XMLTV_MAX_KEPT = 40000;
+
+    /**
+     * Baixa a grade de programação COMPLETA do servidor (xmltv.php, a mesma que o app de TV usa)
+     * e devolve só os programas que parecem jogo ("A x B", "A vs B", "A - B") entre from e to.
+     * Lê aos poucos (não guarda o arquivo todo na memória). Pode demorar: NUNCA na thread principal.
+     */
+    static List<XmlProgram> xmltv(String server, String user, String pass, long from, long to)
+            throws IOException {
+        String address;
+        try {
+            address = server + "/xmltv.php?username=" + URLEncoder.encode(user, "UTF-8")
+                    + "&password=" + URLEncoder.encode(pass, "UTF-8");
+        } catch (Exception e) {
+            throw new IOException("endereco");
+        }
+        List<XmlProgram> out = new ArrayList<>();
+        HttpURLConnection conn = open(address);
+        try {
+            checkOk(conn);
+            PushbackInputStream raw = new PushbackInputStream(
+                    new BufferedInputStream(new LimitedStream(conn.getInputStream(), MAX_BYTES)), 2);
+            int b1 = raw.read();
+            int b2 = raw.read();
+            if (b2 >= 0) {
+                raw.unread(b2);
+            }
+            if (b1 >= 0) {
+                raw.unread(b1);
+            }
+            InputStream in = (b1 == 0x1f && b2 == 0x8b) ? new GZIPInputStream(raw) : raw;
+            XmlPullParser p = Xml.newPullParser();
+            p.setInput(in, null);
+            GregorianCalendar cal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+            boolean inProg = false;
+            String channel = "";
+            long start = 0;
+            long stop = 0;
+            String title = "";
+            String desc = "";
+            int ev = p.getEventType();
+            while (ev != XmlPullParser.END_DOCUMENT) {
+                if (ev == XmlPullParser.START_TAG) {
+                    String n = p.getName();
+                    if ("programme".equals(n)) {
+                        inProg = true;
+                        channel = p.getAttributeValue(null, "channel");
+                        start = xmlTime(cal, p.getAttributeValue(null, "start"));
+                        stop = xmlTime(cal, p.getAttributeValue(null, "stop"));
+                        title = "";
+                        desc = "";
+                    } else if (inProg && "title".equals(n)) {
+                        title = p.nextText();
+                    } else if (inProg && "desc".equals(n)) {
+                        desc = p.nextText();
+                        if (desc.length() > 240) {
+                            desc = desc.substring(0, 240);
+                        }
+                    }
+                } else if (ev == XmlPullParser.END_TAG && "programme".equals(p.getName())) {
+                    if (inProg && channel != null && stop > from && start < to
+                            && out.size() < XMLTV_MAX_KEPT) {
+                        String text = (title + " " + desc).trim();
+                        String low = text.toLowerCase(Locale.ROOT);
+                        if (low.contains(" x ") || low.contains(" vs") || low.contains(" v ")
+                                || low.contains(" - ") || low.contains(" \u00d7 ")) {
+                            out.add(new XmlProgram(channel.trim().toLowerCase(Locale.ROOT), start,
+                                    stop, text));
+                        }
+                    }
+                    inProg = false;
+                }
+                ev = p.next();
+            }
+            return out;
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            // XML quebrado no meio: devolve o que deu para ler, se houver algo
+            if (!out.isEmpty()) {
+                return out;
+            }
+            throw new IOException("xmltv invalido");
+        } finally {
+            conn.disconnect();
+        }
+    }
+
+    /** "20261121210000 +0000" (ou sem fuso = UTC) em milissegundos; 0 se não entender. */
+    private static long xmlTime(GregorianCalendar cal, String s) {
+        if (s == null) {
+            return 0L;
+        }
+        s = s.trim();
+        if (s.length() < 14) {
+            return 0L;
+        }
+        try {
+            cal.clear();
+            cal.set(Integer.parseInt(s.substring(0, 4)), Integer.parseInt(s.substring(4, 6)) - 1,
+                    Integer.parseInt(s.substring(6, 8)), Integer.parseInt(s.substring(8, 10)),
+                    Integer.parseInt(s.substring(10, 12)), Integer.parseInt(s.substring(12, 14)));
+            long t = cal.getTimeInMillis();
+            String z = s.substring(14).trim();
+            if (z.length() >= 5 && (z.charAt(0) == '+' || z.charAt(0) == '-')) {
+                int sign = z.charAt(0) == '-' ? -1 : 1;
+                int hh = Integer.parseInt(z.substring(1, 3));
+                int mm = Integer.parseInt(z.substring(3, 5));
+                t -= sign * (hh * 60L + mm) * 60000L;
+            }
+            return t;
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
 
     private static String apiUrl(String server, String user, String pass, String action)
             throws IOException {

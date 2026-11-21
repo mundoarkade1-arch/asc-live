@@ -153,6 +153,13 @@ final class MatchDialog {
         title.setText(info.isEmpty() ? "Ainda não há canal confirmado para este jogo."
                 : "Nenhum desses canais está na sua lista.");
         list.removeAllViews();
+        String st = Broadcasts.statusFor(match);
+        if (!st.isEmpty()) {
+            TextView stv = Ui.text(act, "(" + st + ")", 12, C.TEXT2);
+            LinearLayout.LayoutParams sl = new LinearLayout.LayoutParams(-1, -2);
+            sl.bottomMargin = Ui.dp(act, 10);
+            list.addView(stv, sl);
+        }
         if (!info.isEmpty()) {
             TextView where = Ui.text(act, "Segundo a grade de TV do Brasil, este jogo passa em: "
                     + info, 15, C.TEXT);

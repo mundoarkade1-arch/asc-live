@@ -203,8 +203,8 @@ final class TeamView extends LinearLayout {
             }
         });
         if (next.isEmpty()) {
-            gamesBox.addView(Ui.text(act, "Nenhum jogo marcado nas próximas semanas.",
-                    16, C.TEXT2));
+            gamesBox.addView(Ui.text(act, "Nenhum jogo marcado no calendário.\n("
+                    + Fixtures.lastDiag() + ")", 16, C.TEXT2));
             lineupBox.removeAllViews();
             lineupBox.addView(Ui.text(act, "Sem jogos para mostrar a escalação.", 16, C.TEXT2));
             return;
