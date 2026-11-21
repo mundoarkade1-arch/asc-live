@@ -184,48 +184,64 @@ final class TeamView extends LinearLayout {
     private void renderGames() {
         gamesBox.removeAllViews();
         firstRow = null;
+        // Só jogos que ainda vão acontecer (ou estão rolando). Os que já passaram não aparecem.
+        long limit = System.currentTimeMillis() - 4L * 60L * 60L * 1000L;
         List<Match> next = new ArrayList<>();
-        List<Match> done = new ArrayList<>();
         for (Match m : all) {
-            (m.status == Match.FINISHED ? done : next).add(m);
+            if (m.status == Match.FINISHED) {
+                continue;
+            }
+            if (m.status != Match.LIVE && m.horario < limit) {
+                continue;
+            }
+            next.add(m);
         }
-        Collections.sort(done, new Comparator<Match>() {
+        Collections.sort(next, new Comparator<Match>() {
             @Override
             public int compare(Match a, Match b) {
-                return a.horario < b.horario ? 1 : (a.horario > b.horario ? -1 : 0);
+                return a.horario < b.horario ? -1 : (a.horario > b.horario ? 1 : 0);
             }
         });
-        if (next.isEmpty() && done.isEmpty()) {
-            gamesBox.addView(Ui.text(act, "Nenhum jogo encontrado nas próximas semanas.",
+        if (next.isEmpty()) {
+            gamesBox.addView(Ui.text(act, "Nenhum jogo marcado nas próximas semanas.",
                     16, C.TEXT2));
             lineupBox.removeAllViews();
             lineupBox.addView(Ui.text(act, "Sem jogos para mostrar a escalação.", 16, C.TEXT2));
             return;
         }
-        if (!next.isEmpty()) {
-            section("PRÓXIMOS JOGOS");
-            for (Match m : next) {
-                View r = row(m);
-                if (firstRow == null) {
-                    firstRow = r;
-                }
+        section("PRÓXIMO JOGO");
+        View featured = row(next.get(0), true);
+        firstRow = featured;
+        if (next.size() > 1) {
+            section("DEPOIS");
+            for (int i = 1; i < next.size(); i++) {
+                row(next.get(i), false);
             }
         }
-        if (!done.isEmpty()) {
-            section("ÚLTIMOS RESULTADOS");
-            int n = 0;
-            for (Match m : done) {
-                View r = row(m);
-                if (firstRow == null) {
-                    firstRow = r;
-                }
-                if (++n >= 5) {
-                    break;
-                }
-            }
+        showLineup(next.get(0), 0);
+    }
+
+    /** "AO VIVO", "hoje", "amanhã" ou "em N dias". */
+    private String whenText(Match m) {
+        if (m.status == Match.LIVE) {
+            return "AO VIVO";
         }
-        Match pick = !next.isEmpty() ? next.get(0) : done.get(0);
-        showLineup(pick, 0);
+        java.util.Calendar a = java.util.Calendar.getInstance();
+        java.util.Calendar b = java.util.Calendar.getInstance();
+        b.setTimeInMillis(m.horario);
+        a.set(java.util.Calendar.HOUR_OF_DAY, 0);
+        a.set(java.util.Calendar.MINUTE, 0);
+        a.set(java.util.Calendar.SECOND, 0);
+        a.set(java.util.Calendar.MILLISECOND, 0);
+        b.set(java.util.Calendar.HOUR_OF_DAY, 0);
+        b.set(java.util.Calendar.MINUTE, 0);
+        b.set(java.util.Calendar.SECOND, 0);
+        b.set(java.util.Calendar.MILLISECOND, 0);
+        long days = Math.round((b.getTimeInMillis() - a.getTimeInMillis()) / 86400000.0);
+        if (days <= 0) {
+            return "hoje";
+        }
+        return days == 1 ? "amanhã" : "em " + days + " dias";
     }
 
     private void section(String text) {
@@ -242,30 +258,33 @@ final class TeamView extends LinearLayout {
                 && ChannelNames.queryKey(team.name).equals(ChannelNames.queryKey(m.casa)));
     }
 
-    private View row(final Match m) {
+    private View row(final Match m, final boolean featured) {
         final boolean home = isHome(m);
         LinearLayout row = new LinearLayout(act);
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setFocusable(true);
         row.setClickable(true);
-        row.setBackground(Ui.glassFocusBg(act, 12));
-        row.setPadding(Ui.dp(act, 10), Ui.dp(act, 8), Ui.dp(act, 12), Ui.dp(act, 8));
+        row.setBackground(featured ? Ui.glassStrong(act, 14) : Ui.glassFocusBg(act, 12));
+        int vpad = featured ? 16 : 8;
+        row.setPadding(Ui.dp(act, 10), Ui.dp(act, vpad), Ui.dp(act, 12), Ui.dp(act, vpad));
 
         String d = new SimpleDateFormat("EEE dd/MM", new Locale("pt", "BR"))
                 .format(new Date(m.horario));
         String t = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(m.horario));
-        TextView when = Ui.text(act, d + "\n" + t, 14, C.TEXT);
+        TextView when = Ui.text(act, (featured ? whenText(m) + "\n" : "") + d + "\n" + t,
+                featured ? 16 : 14, featured ? C.GOLD : C.TEXT);
         when.setLineSpacing(0, 1.1f);
-        row.addView(when, new LayoutParams(Ui.dp(act, 92), -2));
+        row.addView(when, new LayoutParams(Ui.dp(act, featured ? 110 : 92), -2));
 
         ImageView opp = new ImageView(act);
         opp.setScaleType(ImageView.ScaleType.FIT_CENTER);
         ImageLoader.load(opp, home ? m.escudoFora : m.escudoCasa, 100);
-        row.addView(opp, new LayoutParams(Ui.dp(act, 34), Ui.dp(act, 34)));
+        int shield = featured ? 52 : 34;
+        row.addView(opp, new LayoutParams(Ui.dp(act, shield), Ui.dp(act, shield)));
 
         LinearLayout words = new LinearLayout(act);
         words.setOrientation(VERTICAL);
-        TextView vs = Ui.title(act, (home ? m.fora : m.casa), 16, C.TEXT);
+        TextView vs = Ui.title(act, (home ? m.fora : m.casa), featured ? 22 : 16, C.TEXT);
         vs.setSingleLine(true);
         vs.setEllipsize(TextUtils.TruncateAt.END);
         words.addView(vs);

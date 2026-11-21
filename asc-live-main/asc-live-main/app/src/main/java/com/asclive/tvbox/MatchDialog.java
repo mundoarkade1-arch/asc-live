@@ -149,8 +149,17 @@ final class MatchDialog {
     }
 
     private void showNone() {
-        title.setText("Ainda não há canal confirmado para este jogo.");
+        String info = Broadcasts.infoFor(match);
+        title.setText(info.isEmpty() ? "Ainda não há canal confirmado para este jogo."
+                : "Nenhum desses canais está na sua lista.");
         list.removeAllViews();
+        if (!info.isEmpty()) {
+            TextView where = Ui.text(act, "Segundo a grade de TV do Brasil, este jogo passa em: "
+                    + info, 15, C.TEXT);
+            LinearLayout.LayoutParams wl = new LinearLayout.LayoutParams(-1, -2);
+            wl.bottomMargin = Ui.dp(act, 12);
+            list.addView(where, wl);
+        }
         TextView more = Ui.button(act, "Ver canais que costumam passar", Ui.DARK);
         more.setOnClickListener(v -> loadProbable());
         list.addView(more, new LinearLayout.LayoutParams(-1, -2));

@@ -5,6 +5,13 @@ O código inteiro foi compilado no ambiente do agente contra um `android.jar` re
 classes de teste no lugar do `androidx.media3` e `androidx.core`. O **build do GitHub Actions** e o
 **teste no aparelho (TX9)** ainda são a prova final: ninguém abriu o app num TV Box ainda.
 
+## Rodada 21 (canais certos do jogo + página do time mais limpa)
+- [x] `Broadcasts.confirmedFor` deixou de usar as emissoras da ESPN (são dos EUA: "ESPN", "Fox" etc. casavam com canal aleatório). Agora só confirma por: (1) canal de evento com os dois times no nome; (2) programação (EPG) da própria lista, canal esportivo com os dois times no título (jogos nas próximas 36 h, só lista por servidor); (3) grade de TV do Brasil do TheSportsDB (`eventstv.php`, país Brasil), com o nome da emissora procurado como palavra inteira na lista.
+- [x] `Broadcasts.infoFor`: se a grade diz onde passa mas o canal não está na lista, `MatchDialog` mostra "Segundo a grade de TV do Brasil, este jogo passa em: ...".
+- [x] Time só é aceito se o nome for igual (ou igual + sigla do estado). "Atlético" sozinho nunca vale. Na dúvida, não confirma.
+- [x] `TeamView`: sem jogos que já passaram; o próximo jogo fica em destaque (cartão grande, dourado, "hoje/amanhã/em N dias") e os outros aparecem em "DEPOIS".
+- [ ] Validar no TV Box. A grade do TheSportsDB é mantida por voluntários e pode não ter todos os jogos; Flashscore não tem API pública (copiar o site quebra e fere os termos), então não foi usado.
+
 ## Rodada 20 (página do time: "Não foi possível buscar os jogos")
 - [x] `Fixtures.forTeam`: primeiro busca só a liga do time (pedido pequeno), depois o calendário de todas as ligas, depois o calendário do próprio time. Só mostra erro se tudo falhar.
 - [x] `Fixtures.fetchLeagueResilient`: se o pedido grande (45 dias, limit=500) falhar, tenta sem `limit`, depois janela menor, depois só hoje.
