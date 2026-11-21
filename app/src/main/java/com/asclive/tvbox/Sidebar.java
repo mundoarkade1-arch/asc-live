@@ -34,6 +34,9 @@ final class Sidebar extends LinearLayout {
 
         /** A pessoa mexeu na barra (cancela o foco automático no conteúdo). */
         void onTouched();
+
+        /** Seta para cima no primeiro item da barra: ir para a busca no topo da tela. */
+        void onUpOut();
     }
 
     private static final class Row {
@@ -79,7 +82,6 @@ final class Sidebar extends LinearLayout {
         addRow(c, LIVE, R.drawable.ic_tv, "Canais");
         addRow(c, FOOTBALL, R.drawable.ic_play, "Esportes");
         addRow(c, FAVORITES, R.drawable.ic_bookmark, "Favoritos");
-        addRow(c, SEARCH, R.drawable.ic_search, "Buscar");
         View spacer = new View(c);
         addView(spacer, new LayoutParams(1, 0, 1f));
         addRow(c, REFRESH, R.drawable.ic_refresh, "Atualizar");
@@ -139,6 +141,8 @@ final class Sidebar extends LinearLayout {
         int to = Math.max(0, Math.min(rows.size() - 1, at + delta));
         if (to != at) {
             rows.get(to).view.requestFocus();
+        } else if (delta < 0) {
+            listener.onUpOut();
         }
     }
 

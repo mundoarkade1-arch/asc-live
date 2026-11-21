@@ -53,3 +53,9 @@
 
 ## Glassmorfismo sem blur
 O vidro é feito com cor translúcida + degradê de brilho + borda fina (`Ui.glass*`). Blur real exige API 31+ ou capturar o fundo, e pesa em TV Box antigo (minSdk 21). Reavaliar só se o TX9 aguentar.
+
+## Futebol do torcedor: fontes e "só canal certo"
+- Times, calendário e escalação vêm da API pública (não oficial) da ESPN, sem chave: `/teams`, `/scoreboard?dates=INICIO-FIM&limit=500` (uma consulta por liga de `ligas.json`) e `/summary?event=ID` (campo `rosters`). Se a janela de datas não trouxer jogos de um time, tenta `/teams/ID/schedule`.
+- Nenhuma fonte grátis diz em qual canal BRASILEIRO passa cada jogo. Por isso o popup mostra como "confirmado" só: (1) canal de evento da lista com os dois times no nome; (2) emissora que a própria ESPN informa. Se não há nenhum, avisa e oferece, separado e rotulado "NÃO confirmado", os canais de `transmissoes.json`.
+- A ESPN só publica a escalação cerca de 1 h antes do jogo. Antes disso a tela mostra a do último jogo do time, marcada como "Provável".
+- Pontos de atenção: a ESPN pode mudar rotas sem aviso; o código foi escrito para falhar sem travar (cada liga independente, cache em arquivo). Não foi testado contra a internet real neste ambiente.

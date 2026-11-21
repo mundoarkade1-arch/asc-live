@@ -5,6 +5,14 @@ O código inteiro foi compilado no ambiente do agente contra um `android.jar` re
 classes de teste no lugar do `androidx.media3` e `androidx.core`. O **build do GitHub Actions** e o
 **teste no aparelho (TX9)** ainda são a prova final: ninguém abriu o app num TV Box ainda.
 
+## Rodada 19 (Futebol para o torcedor + busca no topo)
+- [x] Busca saiu do menu lateral e ficou no topo (lupa). Procura JOGOS (dia, hora e canais confirmados), TIMES e CANAIS, em 3 abas (`SearchScreen`). Seta para cima no topo do conteúdo ou no primeiro item do menu vai para a lupa.
+- [x] Futebol (`FootballScreen`): time do coração em destaque (♥), jogos em destaque de hoje, Meus times (★) e Outros times (rola para baixo). OK abre o time; segurar OK marca a ★.
+- [x] Página do time (`TeamView`): ★ Favoritar, ♥ Time do coração, próximos jogos, últimos resultados e escalação do jogo selecionado (confirmada, ou "provável" = a do último jogo, quando a ESPN ainda não publicou).
+- [x] Clicar num jogo em destaque abre `MatchDialog`: SÓ canais confirmados, cada canal uma vez com botões FHD/HD/SD/4K que abrem direto. Sem confirmação: aviso + botão separado "costumam passar".
+- [x] Dados: `Teams` (lista de times/brasões, cache 7 dias), `Fixtures` (calendário -10/+35 dias, cache 30 min), `Lineups` (escalação), `FavTeams` (★ e ♥).
+- [ ] Validar no TV Box (TX9) com internet: a ESPN não é API oficial; ver "Pontos de atenção" em DECISIONS.md.
+
 ## Rodada 18 (esqueleto de carregamento + glassmorfismo)
 - [x] `Skeleton`: blocos de vidro com brilho que passa, no lugar do texto "Carregando..." (grade de canais, Favoritos, Ao vivo e fileira de jogos do Futebol). Uma View só, relógio próprio, só anima enquanto visível.
 - [x] Vidro (glassmorfismo) em `Ui.glass`, `Ui.glassStrong` e `Ui.glassFocusBg`: verde translúcido + brilho em degradê + borda branca fina. Sem blur de verdade (pesa em TV Box). Cartões, painéis, menu lateral, janelas e Ajustes usam.
